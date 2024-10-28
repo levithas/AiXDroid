@@ -14,10 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import de.levithas.aixdroid.ml.TestModel
 import de.levithas.aixdroid.ui.theme.AiXDroidTheme
 import org.tensorflow.lite.schema.Metadata
-import org.tensorflow.lite.support.metadata.MetadataExtractor
 import kotlin.io.path.Path
 
 
