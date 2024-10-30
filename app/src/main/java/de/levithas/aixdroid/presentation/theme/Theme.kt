@@ -2,12 +2,17 @@ package de.levithas.aixdroid.presentation.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -32,6 +37,21 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+data class CustomColors @OptIn(ExperimentalMaterial3Api::class) constructor(val topAppBarColors: TopAppBarColors)
+
+
+val MaterialTheme.customColors: CustomColors
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalCustomColors.current
+
+
+private val LocalCustomColors = staticCompositionLocalOf<CustomColors> {
+    error("No CustomColors defined!")
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiXDroidTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -49,9 +69,20 @@ fun AiXDroidTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalCustomColors provides CustomColors(
+        topAppBarColors = TopAppBarColors(
+            containerColor = colorScheme.surfaceVariant,
+            scrolledContainerColor = colorScheme.surfaceVariant,
+            navigationIconContentColor = colorScheme.primary,
+            titleContentColor = colorScheme.primary,
+            actionIconContentColor = colorScheme.secondary,
+        )
+    )) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
+
 }

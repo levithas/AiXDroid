@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.presentation.ui.datamanager
+package de.levithas.aixdroid.presentation.ui.modelmanager
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -18,26 +18,24 @@ import de.levithas.aixdroid.R
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DataManagerComposable(
+fun AIModelManagerComposable(
     modifier: Modifier = Modifier
 ) {
-    val viewModel: DataViewModel by remember { mutableStateOf(DataViewModel()) }
+    val viewModel: AIViewModel by remember { mutableStateOf(AIViewModel()) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.data_manager_title)) },
+                title = { Text(stringResource(R.string.model_manager_title)) },
                 colors = MaterialTheme.customColors.topAppBarColors
-                // Weitere AppBar-Elemente hier
             )
         }
     ) { paddingValues ->
         // Hauptinhalt des DataManagerScreens
         Column(modifier = Modifier.padding(paddingValues)) {
-            Text("Willkommen im Data Manager!")
+            Text("Willkommen im AI Model Manager!")
             // Weitere UI-Elemente hier
         }
     }
@@ -46,5 +44,5 @@ fun DataManagerComposable(
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 @Composable
 fun Preview() {
-    AiXDroidTheme() { DataManagerComposable() }
+    AiXDroidTheme { AIModelManagerComposable() }
 }

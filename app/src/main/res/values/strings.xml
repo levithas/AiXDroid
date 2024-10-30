@@ -6,4 +6,5 @@
     <string name="bottom_navigation_models">AI Models</string>
     <string name="bottom_navigation_datasets">Datasets</string>
     <string name="data_manager_title">Data Manager</string>
+    <string name="model_manager_title">AI Model Manager</string>
 </resources>
