@@ -2,4 +2,8 @@
     <string name="app_name">AiXDroid</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="bottom_navigation_home">Home</string>
+    <string name="bottom_navigation_models">AI Models</string>
+    <string name="bottom_navigation_datasets">Datasets</string>
+    <string name="data_manager_title">Data Manager</string>
 </resources>
