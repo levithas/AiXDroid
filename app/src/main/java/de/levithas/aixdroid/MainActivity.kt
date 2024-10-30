@@ -45,14 +45,20 @@ import de.levithas.aixdroid.presentation.ui.datamanager.DataManagerComposable
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelManagerComposable
 
 
+const val TAB_DATA_MANAGER = 0
+const val TAB_MODEL_MANAGER = 1
+
 class MainActivity : AppCompatActivity() {
+
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val windowSizeClass = calculateWindowSizeClass(this)
-            MainApplication(windowSizeClass)
+            AiXDroidTheme {
+                val windowSizeClass = calculateWindowSizeClass(this)
+                MainApplication(windowSizeClass)
+            }
         }
     }
 }
@@ -62,9 +68,9 @@ fun MainApplication(
     windowSize: WindowSizeClass
 ) {
     val context = LocalContext.current
-    var currentTab by remember { mutableIntStateOf(0) }
-    val onSwitchToDataManager = { currentTab = 0 }
-    val onSwitchToModelManager = { currentTab = 1 }
+    var currentTab by remember { mutableIntStateOf(TAB_DATA_MANAGER) }
+    val onSwitchToDataManager = { currentTab = TAB_DATA_MANAGER }
+    val onSwitchToModelManager = { currentTab = TAB_MODEL_MANAGER }
 
     when (windowSize.widthSizeClass) {
         WindowWidthSizeClass.Compact -> {
@@ -76,6 +82,13 @@ fun MainApplication(
         }
         WindowWidthSizeClass.Expanded -> {
             MainApplicationLandscape(
+                currentTab,
+                onSwitchToModelManager,
+                onSwitchToDataManager
+            )
+        }
+        else -> {
+            MainApplicationPortrait(
                 currentTab,
                 onSwitchToModelManager,
                 onSwitchToDataManager
@@ -107,7 +120,7 @@ private fun BottomNavigation(
                     text = stringResource(R.string.bottom_navigation_datasets)
                 )
             },
-            selected = currentTab == 0,
+            selected = currentTab == TAB_DATA_MANAGER,
             onClick = { onSwitchToDataManager.invoke() }
         )
         NavigationBarItem(
@@ -122,7 +135,7 @@ private fun BottomNavigation(
                     text = stringResource(R.string.bottom_navigation_models)
                 )
             },
-            selected = currentTab == 1,
+            selected = currentTab == TAB_MODEL_MANAGER,
             onClick = { onSwitchToModelManager.invoke() }
         )
     }
@@ -148,17 +161,15 @@ fun MainApplicationPortrait(
     onSwitchToModelManager: () -> Unit,
     onSwitchToDataManager: () -> Unit
 ) {
-    AiXDroidTheme {
-        Scaffold(
-            bottomBar = { BottomNavigation(
-                modifier = Modifier,
-                onSwitchToDataManager = onSwitchToDataManager,
-                onSwitchToModelManager = onSwitchToModelManager,
-                currentTab = currentTab
-            ) }
-        ) { paddingValues ->
-            MainScreen(modifier = Modifier.padding(paddingValues),currentTab)
-        }
+    Scaffold(
+        bottomBar = { BottomNavigation(
+            modifier = Modifier,
+            onSwitchToDataManager = onSwitchToDataManager,
+            onSwitchToModelManager = onSwitchToModelManager,
+            currentTab = currentTab
+        ) }
+    ) { paddingValues ->
+        MainScreen(modifier = Modifier.padding(paddingValues),currentTab)
     }
 }
 
@@ -188,7 +199,7 @@ fun RailNavigation(
                 label = {
                     Text(stringResource(R.string.bottom_navigation_datasets))
                 },
-                selected = currentTab == 0,
+                selected = currentTab == TAB_DATA_MANAGER,
                 onClick = { onSwitchToDataManager.invoke() }
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -202,7 +213,7 @@ fun RailNavigation(
                 label = {
                     Text(stringResource(R.string.bottom_navigation_models))
                 },
-                selected = currentTab == 1,
+                selected = currentTab == TAB_MODEL_MANAGER,
                 onClick = { onSwitchToModelManager.invoke() }
             )
         }
@@ -216,19 +227,17 @@ fun MainApplicationLandscape(
     onSwitchToModelManager: () -> Unit,
     onSwitchToDataManager: () -> Unit
 ) {
-    AiXDroidTheme {
-        Surface(
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Row {
-                RailNavigation(
-                    Modifier,
-                    currentTab,
-                    onSwitchToDataManager,
-                    onSwitchToModelManager
-                )
-                MainScreen(modifier = Modifier, currentTab)
-            }
+    Surface(
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Row {
+            RailNavigation(
+                Modifier,
+                currentTab,
+                onSwitchToDataManager,
+                onSwitchToModelManager
+            )
+            MainScreen(modifier = Modifier, currentTab)
         }
     }
 }
@@ -242,17 +251,21 @@ fun BottomNavigationPreview() {
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE, heightDp = 320)
 @Composable
 fun NavigationRailPreview() {
-    AiXDroidTheme { RailNavigation(Modifier, 0, {}, {}) }
+    AiXDroidTheme { RailNavigation(Modifier, TAB_DATA_MANAGER, {}, {}) }
 }
 
 @Preview(widthDp = 360, heightDp = 640)
 @Composable
 fun PortraitPreview() {
-    MainApplicationPortrait(1, {}, {})
+    AiXDroidTheme {
+        MainApplicationPortrait(TAB_DATA_MANAGER, {}, {})
+    }
 }
 
 @Preview(widthDp = 640, heightDp = 360)
 @Composable
 fun LandscapePreview() {
-    MainApplicationLandscape(0, {}, {})
+    AiXDroidTheme {
+        MainApplicationLandscape(TAB_DATA_MANAGER, {}, {})
+    }
 }
