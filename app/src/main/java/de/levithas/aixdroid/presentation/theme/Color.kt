@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.ui.theme
+package de.levithas.aixdroid.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -7,14 +7,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import de.levithas.aixdroid.ui.theme.AiXDroidTheme
+import de.levithas.aixdroid.data.model.ModelConfiguration
+import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import org.tensorflow.lite.schema.Metadata
 import kotlin.io.path.Path
 
@@ -46,11 +47,12 @@ fun TFMetadataPreviewWindow(modelConfiguration: ModelConfiguration, modifier: Mo
             Text(
                 "Hallo Levi!"
             )
-            Text(
-                "Modellname: " + modelConfiguration.meta.name()
-            )
+            Button(
+                onClick = {}
+            ) {
+                Text("Open File")
+            }
         }
-
     }
 }
 

@@ -1,6 +1,5 @@
-package de.levithas.aixdroid.ui.theme
+package de.levithas.aixdroid.presentation.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.ui.theme
+package de.levithas.aixdroid.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
