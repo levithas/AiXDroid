@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.data.model
+package de.levithas.aixdroid.domain.model
 
 data class Dataset(
     val name: String,

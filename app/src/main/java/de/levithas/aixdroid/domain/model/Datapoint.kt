@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.data.model
+package de.levithas.aixdroid.domain.model
 
 import java.util.Date
 

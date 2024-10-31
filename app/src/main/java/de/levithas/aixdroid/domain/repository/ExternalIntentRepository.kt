@@ -1,6 +1,6 @@
 package de.levithas.aixdroid.domain.repository
 
-import de.levithas.aixdroid.data.model.ExternalIntentConfiguration
+import de.levithas.aixdroid.domain.model.ExternalIntentConfiguration
 
 interface ExternalIntentRepository {
     suspend fun getExternalIntentList() : List<ExternalIntentConfiguration>

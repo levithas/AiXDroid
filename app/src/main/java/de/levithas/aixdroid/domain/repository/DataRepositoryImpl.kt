@@ -1,6 +1,6 @@
 package de.levithas.aixdroid.domain.repository
 
-import de.levithas.aixdroid.data.model.Dataset
+import de.levithas.aixdroid.domain.model.Dataset
 
 class DataRepositoryImpl : DataRepository {
     override suspend fun getDatasetList(): List<Dataset> {

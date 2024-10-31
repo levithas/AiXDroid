@@ -1,8 +1,14 @@
 package de.levithas.aixdroid.domain.repository
 
-import de.levithas.aixdroid.data.model.ModelConfiguration
+import de.levithas.aixdroid.data.dao.AIModelDao
+import de.levithas.aixdroid.data.model.AIModelConfigurationEntity
+import de.levithas.aixdroid.domain.model.ModelConfiguration
+import javax.inject.Inject
+import kotlin.io.path.pathString
 
-class ModelRepositoryImpl : ModelRepository {
+class ModelRepositoryImpl @Inject constructor(
+    private val dao: AIModelDao
+) : ModelRepository {
     override suspend fun getModelList(): List<ModelConfiguration> {
         TODO("Not yet implemented")
     }
@@ -16,7 +22,11 @@ class ModelRepositoryImpl : ModelRepository {
     }
 
     override suspend fun addModel(model: ModelConfiguration) {
-        TODO("Not yet implemented")
+        dao.insertModel(AIModelConfigurationEntity(
+            name = model.name,
+            path = model.path.pathString,
+            metadata = model.meta.toString(),
+        ))
     }
 
     override suspend fun updateModel(model: ModelConfiguration) {

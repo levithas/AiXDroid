@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -39,6 +41,7 @@ android {
     }
 }
 
+
 dependencies {
 
     implementation("org.tensorflow:tensorflow-lite:2.5.0")
@@ -49,6 +52,12 @@ dependencies {
     implementation("androidx.compose.material3:material3-window-size-class:1.3.0")
     implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0-alpha02")
     implementation("androidx.compose.material:material-icons-extended")
+
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    implementation(libs.androidx.room.common)
+    implementation(libs.androidx.room.ktx)
+    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -72,4 +81,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
 }

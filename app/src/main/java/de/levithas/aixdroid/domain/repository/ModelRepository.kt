@@ -1,6 +1,6 @@
 package de.levithas.aixdroid.domain.repository
 
-import de.levithas.aixdroid.data.model.ModelConfiguration
+import de.levithas.aixdroid.domain.model.ModelConfiguration
 
 interface ModelRepository {
     suspend fun getModelList(): List<ModelConfiguration>
