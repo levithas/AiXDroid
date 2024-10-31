@@ -19,4 +19,3 @@ class AddNewAIModelUseCase @Inject constructor(
         modelRepository.addModel(config)
     }
 }
-

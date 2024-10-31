@@ -10,14 +10,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AIModelDao {
     @Insert
-    suspend fun insertModel(model: AIModelConfigurationEntity)
+    fun insertModel(model: AIModelConfigurationEntity)
 
     @Query("SELECT * FROM AIModelConfiguration WHERE id == :modelId")
-    suspend fun getModelById(modelId: Long) : Flow<AIModelConfigurationEntity>
+    fun getModelById(modelId: Long) : Flow<AIModelConfigurationEntity>
 
     @Query("SELECT * FROM AIModelConfiguration")
-    suspend fun getAllModels(): Flow<Array<AIModelConfigurationEntity>>
+    fun getAllModels(): Flow<Array<AIModelConfigurationEntity>>
 
     @Delete
-    suspend fun deleteModel(model: AIModelConfigurationEntity)
+    fun deleteModel(model: AIModelConfigurationEntity)
 }
