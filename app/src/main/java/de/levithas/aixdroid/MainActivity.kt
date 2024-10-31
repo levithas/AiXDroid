@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Dataset
 import androidx.compose.material.icons.filled.ModelTraining
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,8 +46,10 @@ import de.levithas.aixdroid.presentation.ui.datamanager.DataManagerComposable
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelManagerComposable
 
 
-const val TAB_DATA_MANAGER = 0
-const val TAB_MODEL_MANAGER = 1
+const val TAB_EXTERNAL_INTENT_MANAGER = 0
+const val TAB_DATA_MANAGER = 1
+const val TAB_MODEL_MANAGER = 2
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -69,29 +72,33 @@ fun MainApplication(
 ) {
     val context = LocalContext.current
     var currentTab by remember { mutableIntStateOf(TAB_DATA_MANAGER) }
+    val onSwitchToExternalIntentManager = { currentTab = TAB_EXTERNAL_INTENT_MANAGER }
     val onSwitchToDataManager = { currentTab = TAB_DATA_MANAGER }
     val onSwitchToModelManager = { currentTab = TAB_MODEL_MANAGER }
 
     when (windowSize.widthSizeClass) {
         WindowWidthSizeClass.Compact -> {
             MainApplicationPortrait(
-                currentTab,
-                onSwitchToModelManager,
-                onSwitchToDataManager
+                currentTab = currentTab,
+                onSwitchToModelManager = onSwitchToModelManager,
+                onSwitchToDataManager = onSwitchToDataManager,
+                onSwitchToExternalIntentManager = onSwitchToExternalIntentManager
             )
         }
         WindowWidthSizeClass.Expanded -> {
             MainApplicationLandscape(
-                currentTab,
-                onSwitchToModelManager,
-                onSwitchToDataManager
+                currentTab = currentTab,
+                onSwitchToModelManager = onSwitchToModelManager,
+                onSwitchToDataManager = onSwitchToDataManager,
+                onSwitchToExternalIntentManager = onSwitchToExternalIntentManager
             )
         }
         else -> {
             MainApplicationPortrait(
-                currentTab,
-                onSwitchToModelManager,
-                onSwitchToDataManager
+                currentTab = currentTab,
+                onSwitchToModelManager = onSwitchToModelManager,
+                onSwitchToDataManager = onSwitchToDataManager,
+                onSwitchToExternalIntentManager = onSwitchToExternalIntentManager
             )
         }
     }
@@ -102,7 +109,8 @@ private fun BottomNavigation(
     modifier: Modifier = Modifier,
     currentTab: Int,
     onSwitchToModelManager: () -> Unit,
-    onSwitchToDataManager: () -> Unit
+    onSwitchToDataManager: () -> Unit,
+    onSwitchToExternalIntentManager: () -> Unit
 ) {
     NavigationBar(
         modifier = modifier,
@@ -138,6 +146,21 @@ private fun BottomNavigation(
             selected = currentTab == TAB_MODEL_MANAGER,
             onClick = { onSwitchToModelManager.invoke() }
         )
+        NavigationBarItem(
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Apps,
+                    contentDescription = null
+                )
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.bottom_navigation_apps)
+                )
+            },
+            selected = currentTab == TAB_EXTERNAL_INTENT_MANAGER,
+            onClick = { onSwitchToExternalIntentManager.invoke() }
+        )
     }
 }
 
@@ -159,13 +182,15 @@ fun MainScreen(
 fun MainApplicationPortrait(
     currentTab: Int,
     onSwitchToModelManager: () -> Unit,
-    onSwitchToDataManager: () -> Unit
+    onSwitchToDataManager: () -> Unit,
+    onSwitchToExternalIntentManager: () -> Unit
 ) {
     Scaffold(
         bottomBar = { BottomNavigation(
             modifier = Modifier,
             onSwitchToDataManager = onSwitchToDataManager,
             onSwitchToModelManager = onSwitchToModelManager,
+            onSwitchToExternalIntentManager = onSwitchToExternalIntentManager,
             currentTab = currentTab
         ) }
     ) { paddingValues ->
@@ -178,7 +203,8 @@ fun RailNavigation(
     modifier: Modifier = Modifier,
     currentTab: Int,
     onSwitchToModelManager: () -> Unit,
-    onSwitchToDataManager: () -> Unit
+    onSwitchToDataManager: () -> Unit,
+    onSwitchToExternalIntentManager: () -> Unit
 ) {
     NavigationRail(
         modifier = modifier.padding(start = 8.dp, end = 8.dp),
@@ -216,6 +242,20 @@ fun RailNavigation(
                 selected = currentTab == TAB_MODEL_MANAGER,
                 onClick = { onSwitchToModelManager.invoke() }
             )
+            Spacer(modifier = Modifier.height(12.dp))
+            NavigationRailItem(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Apps,
+                        contentDescription = null
+                    )
+                },
+                label = {
+                    Text(stringResource(R.string.bottom_navigation_apps_landscape))
+                },
+                selected = currentTab == TAB_EXTERNAL_INTENT_MANAGER,
+                onClick = { onSwitchToExternalIntentManager.invoke() }
+            )
         }
     }
 }
@@ -225,17 +265,19 @@ fun RailNavigation(
 fun MainApplicationLandscape(
     currentTab: Int,
     onSwitchToModelManager: () -> Unit,
-    onSwitchToDataManager: () -> Unit
+    onSwitchToDataManager: () -> Unit,
+    onSwitchToExternalIntentManager: () -> Unit
 ) {
     Surface(
         color = MaterialTheme.colorScheme.background
     ) {
         Row {
             RailNavigation(
-                Modifier,
-                currentTab,
-                onSwitchToDataManager,
-                onSwitchToModelManager
+                modifier = Modifier,
+                currentTab = currentTab,
+                onSwitchToDataManager = onSwitchToDataManager,
+                onSwitchToModelManager = onSwitchToModelManager,
+                onSwitchToExternalIntentManager = onSwitchToExternalIntentManager
             )
             MainScreen(modifier = Modifier, currentTab)
         }
@@ -245,20 +287,20 @@ fun MainApplicationLandscape(
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 @Composable
 fun BottomNavigationPreview() {
-    AiXDroidTheme { BottomNavigation(Modifier.padding(top = 24.dp), 0, {}, {}) }
+    AiXDroidTheme { BottomNavigation(Modifier.padding(top = 24.dp), 0, {}, {}, {}) }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE, heightDp = 320)
 @Composable
 fun NavigationRailPreview() {
-    AiXDroidTheme { RailNavigation(Modifier, TAB_DATA_MANAGER, {}, {}) }
+    AiXDroidTheme { RailNavigation(Modifier, TAB_DATA_MANAGER, {}, {}, {}) }
 }
 
 @Preview(widthDp = 360, heightDp = 640)
 @Composable
 fun PortraitPreview() {
     AiXDroidTheme {
-        MainApplicationPortrait(TAB_DATA_MANAGER, {}, {})
+        MainApplicationPortrait(TAB_DATA_MANAGER, {}, {}, {})
     }
 }
 
@@ -266,6 +308,6 @@ fun PortraitPreview() {
 @Composable
 fun LandscapePreview() {
     AiXDroidTheme {
-        MainApplicationLandscape(TAB_DATA_MANAGER, {}, {})
+        MainApplicationLandscape(TAB_DATA_MANAGER, {}, {}, {})
     }
 }

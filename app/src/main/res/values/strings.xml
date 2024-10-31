@@ -7,4 +7,7 @@
     <string name="bottom_navigation_datasets">Datasets</string>
     <string name="data_manager_title">Data Manager</string>
     <string name="model_manager_title">AI Model Manager</string>
+    <string name="external_intent_manager_title">External Intent Manager</string>
+    <string name="bottom_navigation_apps">External Intents</string>
+    <string name="bottom_navigation_apps_landscape">External\nIntents</string>
 </resources>
