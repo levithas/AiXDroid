@@ -3,7 +3,7 @@ package de.levithas.aixdroid.data.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "AIModels")
+@Entity(tableName = "AIModelConfiguration")
 data class AIModelConfigurationEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
 

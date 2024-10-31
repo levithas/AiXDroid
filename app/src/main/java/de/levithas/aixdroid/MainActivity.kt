@@ -46,7 +46,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.ui.datamanager.DataManagerComposable
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelManagerComposable
-import de.levithas.aixdroid.presentation.ui.modelmanager.AIViewModel
+
 
 
 const val TAB_EXTERNAL_INTENT_MANAGER = 0
