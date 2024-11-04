@@ -19,7 +19,7 @@ import de.levithas.aixdroid.presentation.theme.customColors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExternalIntentManagerComposable(
-    modifier: Modifier
+    modifier: Modifier = Modifier
 ) {
     val viewModel: ExternalIntentViewModel by remember { mutableStateOf(ExternalIntentViewModel())}
 
