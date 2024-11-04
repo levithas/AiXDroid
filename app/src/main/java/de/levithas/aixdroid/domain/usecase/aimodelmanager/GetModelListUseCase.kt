@@ -5,10 +5,15 @@ import de.levithas.aixdroid.domain.repository.ModelRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GetModelListUseCase @Inject constructor(
+
+interface GetModelListUseCase {
+    suspend operator fun invoke(): Flow<List<ModelConfiguration>>
+}
+
+class GetModelListUseCaseImpl @Inject constructor(
     private val modelRepository: ModelRepository
-) {
-    suspend operator fun invoke() : Flow<List<ModelConfiguration>> {
+): GetModelListUseCase {
+    override suspend operator fun invoke() : Flow<List<ModelConfiguration>> {
         return modelRepository.getModelList()
     }
 }

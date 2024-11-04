@@ -6,10 +6,15 @@ import org.tensorflow.lite.schema.Metadata
 import java.nio.file.Path
 import javax.inject.Inject
 
-class AddNewAIModelUseCase @Inject constructor(
+interface AddNewAIModelUseCase {
+    suspend operator fun invoke(name: String, path: Path, meta: Metadata)
+}
+
+
+class AddNewAIModelUseCaseImpl @Inject constructor(
     private val modelRepository: ModelRepository
-) {
-    suspend operator fun invoke(name: String, path: Path, meta: Metadata) {
+) : AddNewAIModelUseCase {
+    override suspend operator fun invoke(name: String, path: Path, meta: Metadata) {
         val config = ModelConfiguration(
             id = -1,
             name = name,

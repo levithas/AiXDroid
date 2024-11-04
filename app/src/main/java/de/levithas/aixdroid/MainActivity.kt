@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,8 +46,8 @@ import androidx.compose.ui.unit.dp
 import dagger.hilt.android.AndroidEntryPoint
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.ui.datamanager.DataManagerComposable
+import de.levithas.aixdroid.presentation.ui.externalintentmanager.ExternalIntentManagerComposable
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelManagerComposable
-
 
 
 const val TAB_EXTERNAL_INTENT_MANAGER = 0
@@ -74,7 +75,7 @@ fun MainApplication(
     windowSize: WindowSizeClass
 ) {
     val context = LocalContext.current
-    var currentTab by remember { mutableIntStateOf(TAB_DATA_MANAGER) }
+    var currentTab by rememberSaveable { mutableIntStateOf(TAB_DATA_MANAGER) }
     val onSwitchToExternalIntentManager = { currentTab = TAB_EXTERNAL_INTENT_MANAGER }
     val onSwitchToDataManager = { currentTab = TAB_DATA_MANAGER }
     val onSwitchToModelManager = { currentTab = TAB_MODEL_MANAGER }
@@ -122,6 +123,21 @@ private fun BottomNavigation(
         NavigationBarItem(
             icon = {
                 Icon(
+                    imageVector = Icons.Default.Apps,
+                    contentDescription = null
+                )
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.bottom_navigation_apps)
+                )
+            },
+            selected = currentTab == TAB_EXTERNAL_INTENT_MANAGER,
+            onClick = { onSwitchToExternalIntentManager.invoke() }
+        )
+        NavigationBarItem(
+            icon = {
+                Icon(
                     imageVector = Icons.Default.Dataset,
                     contentDescription = null
                 )
@@ -149,21 +165,6 @@ private fun BottomNavigation(
             selected = currentTab == TAB_MODEL_MANAGER,
             onClick = { onSwitchToModelManager.invoke() }
         )
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Apps,
-                    contentDescription = null
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(R.string.bottom_navigation_apps)
-                )
-            },
-            selected = currentTab == TAB_EXTERNAL_INTENT_MANAGER,
-            onClick = { onSwitchToExternalIntentManager.invoke() }
-        )
     }
 }
 
@@ -174,8 +175,9 @@ fun MainScreen(
 ) {
     // Wechseln zwischen den gewählten Tabs
     when (currentTab) {
-        0 -> DataManagerComposable(modifier)
-        1 -> AIModelManagerComposable(modifier)
+        0 -> ExternalIntentManagerComposable(modifier)
+        1 -> DataManagerComposable(modifier)
+        2 -> AIModelManagerComposable(modifier)
     }
 }
 
@@ -221,6 +223,20 @@ fun RailNavigation(
             NavigationRailItem(
                 icon = {
                     Icon(
+                        imageVector = Icons.Default.Apps,
+                        contentDescription = null
+                    )
+                },
+                label = {
+                    Text(stringResource(R.string.bottom_navigation_apps_landscape))
+                },
+                selected = currentTab == TAB_EXTERNAL_INTENT_MANAGER,
+                onClick = { onSwitchToExternalIntentManager.invoke() }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            NavigationRailItem(
+                icon = {
+                    Icon(
                         imageVector = Icons.Default.Dataset,
                         contentDescription = null
                     )
@@ -244,20 +260,6 @@ fun RailNavigation(
                 },
                 selected = currentTab == TAB_MODEL_MANAGER,
                 onClick = { onSwitchToModelManager.invoke() }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            NavigationRailItem(
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Apps,
-                        contentDescription = null
-                    )
-                },
-                label = {
-                    Text(stringResource(R.string.bottom_navigation_apps_landscape))
-                },
-                selected = currentTab == TAB_EXTERNAL_INTENT_MANAGER,
-                onClick = { onSwitchToExternalIntentManager.invoke() }
             )
         }
     }
@@ -290,7 +292,7 @@ fun MainApplicationLandscape(
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 @Composable
 fun BottomNavigationPreview() {
-    AiXDroidTheme { BottomNavigation(Modifier.padding(top = 24.dp), 0, {}, {}, {}) }
+    AiXDroidTheme { BottomNavigation(Modifier.padding(top = 24.dp), TAB_DATA_MANAGER, {}, {}, {}) }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE, heightDp = 320)
