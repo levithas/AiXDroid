@@ -175,12 +175,11 @@ fun MainScreen(
 ) {
     // Wechseln zwischen den gewählten Tabs
     when (currentTab) {
-        0 -> ExternalIntentManagerComposable()
-        1 -> DataManagerComposable()
-        2 -> AIModelManagerComposable()
+        0 -> ExternalIntentManagerComposable(modifier)
+        1 -> DataManagerComposable(modifier)
+        2 -> AIModelManagerComposable(modifier)
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,13 +190,15 @@ fun MainApplicationPortrait(
     onSwitchToExternalIntentManager: () -> Unit
 ) {
     Scaffold(
-        bottomBar = { BottomNavigation(
-            modifier = Modifier,
-            onSwitchToDataManager = onSwitchToDataManager,
-            onSwitchToModelManager = onSwitchToModelManager,
-            onSwitchToExternalIntentManager = onSwitchToExternalIntentManager,
-            currentTab = currentTab
-        ) }
+        bottomBar = {
+            BottomNavigation(
+                modifier = Modifier,
+                onSwitchToDataManager = onSwitchToDataManager,
+                onSwitchToModelManager = onSwitchToModelManager,
+                onSwitchToExternalIntentManager = onSwitchToExternalIntentManager,
+                currentTab = currentTab
+            )
+        }
     ) { paddingValues ->
         MainScreen(modifier = Modifier.padding(paddingValues),currentTab)
     }
@@ -265,7 +266,6 @@ fun RailNavigation(
     }
 }
 
-
 @Composable
 fun MainApplicationLandscape(
     currentTab: Int,
@@ -305,7 +305,7 @@ fun NavigationRailPreview() {
 @Composable
 fun PortraitPreview() {
     AiXDroidTheme {
-        MainApplicationPortrait(TAB_DATA_MANAGER, {}, {}, {})
+        MainApplicationPortrait(TAB_MODEL_MANAGER, {}, {}, {})
     }
 }
 

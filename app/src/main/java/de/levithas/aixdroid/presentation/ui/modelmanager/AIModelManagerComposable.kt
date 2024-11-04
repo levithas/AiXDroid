@@ -1,11 +1,14 @@
 package de.levithas.aixdroid.presentation.ui.modelmanager
 
 import android.graphics.Paint.Align
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,16 +41,29 @@ import de.levithas.aixdroid.presentation.theme.customColors
 import org.tensorflow.lite.schema.Metadata
 import kotlin.io.path.Path
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIModelManagerComposable(
     modifier: Modifier = Modifier,
     viewModel: AIViewModel = hiltViewModel()
 ) {
     val modelList by viewModel.allModels.collectAsState()
+    AIModelWindow(
+        modifier = modifier,
+        modelList = modelList,
+        onAddNewModelPressed = { viewModel.addModelConfiguration("Test", Path("Bla"), Metadata()) },
+        onDeleteItemPressed = { id -> viewModel.deleteModelConfiguration(id) }
+    )
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AIModelWindow(
+    modifier: Modifier,
+    modelList: List<ModelConfiguration>,
+    onAddNewModelPressed: () -> Unit,
+    onDeleteItemPressed: (Long) -> Unit
+) {
     Scaffold(
-        modifier = Modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.model_manager_title)) },
@@ -55,35 +71,29 @@ fun AIModelManagerComposable(
             )
         }
     ) { paddingValues ->
-        // Hauptinhalt des DataManagerScreens
         Column(
-            modifier = Modifier.padding(paddingValues).fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("Willkommen im AI Model Manager!")
-
-            LazyColumn {
-                items(modelList) { item ->
-                    AIModelItem(
-                        modifier = modifier,
-                        item = item,
-                        onDeleteItemPressed = { viewModel.deleteModelConfiguration(item.id.toLong()) }
-                    )
-                }
-            }
-
+            AIModelItemList(
+                modifier = Modifier.weight(1f),
+                modelList = modelList,
+                onDeleteItemPressed = onDeleteItemPressed
+            )
             IconButton(
-                modifier = modifier.defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
+                modifier = modifier
+                    .align(Alignment.End)
+                    .padding(8.dp)
+                    .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
                 colors = IconButtonColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.primary,
                     disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     disabledContentColor = MaterialTheme.colorScheme.tertiary
                 ),
-                onClick = {
-                    viewModel.addModelConfiguration("Test", Path("Bla"), Metadata())
-                },
+                onClick = onAddNewModelPressed
             ) {
                 Icon(Icons.Filled.Add , "Add" , modifier = Modifier)
             }
@@ -91,6 +101,28 @@ fun AIModelManagerComposable(
     }
 }
 
+@Composable
+fun AIModelItemList(
+    modifier: Modifier,
+    modelList: List<ModelConfiguration>,
+    onDeleteItemPressed: (Long) -> Unit
+) {
+    Text("Willkommen im AI Model Manager!")
+
+    LazyColumn(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        items(modelList) { item ->
+            AIModelItem(
+                modifier = modifier,
+                item = item,
+                onDeleteItemPressed = { onDeleteItemPressed(item.id.toLong()) }
+            )
+        }
+    }
+}
 
 @Composable
 fun AIModelItem(
@@ -125,9 +157,16 @@ fun AIModelItem(
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 @Composable
 fun Preview() {
-    AiXDroidTheme { AIModelManagerComposable(
-
-    ) }
+    AiXDroidTheme {
+        AIModelWindow(
+            modifier = Modifier,
+            modelList = arrayListOf(
+                ModelConfiguration(0, "Test", Path("Path"), Metadata()),
+            ),
+            {},
+            {}
+        )
+    }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
