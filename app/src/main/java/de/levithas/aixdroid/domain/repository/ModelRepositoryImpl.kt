@@ -19,15 +19,15 @@ class ModelRepositoryImpl @Inject constructor(
         for (input in model.inputs) {
             val tensorId = dao.insertTensorData(input)
             dao.insertModelDataInput(DBModelDataInput(
-                modelDataUri = model.modelData.uri,
-                tensorId = tensorId
+                uri = model.modelData.uri,
+                id = tensorId
             ))
         }
         for (output in model.outputs) {
             val tensorId = dao.insertTensorData(output)
             dao.insertModelDataOutput(DBModelDataOutput(
-                modelDataUri = model.modelData.uri,
-                tensorId = tensorId
+                uri = model.modelData.uri,
+                id = tensorId
             ))
         }
     }

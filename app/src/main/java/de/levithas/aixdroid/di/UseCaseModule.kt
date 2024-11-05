@@ -9,8 +9,6 @@ import de.levithas.aixdroid.domain.usecase.aimodelmanager.AddNewAIModelUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.AddNewAIModelUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCaseImpl
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelByIdUseCase
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelByIdUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelListUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelListUseCaseImpl
 
@@ -23,7 +21,9 @@ object UseCaseModule {
     fun provideAddNewAIModelUseCase(
         repository: ModelRepository
     ): AddNewAIModelUseCase {
-        return AddNewAIModelUseCaseImpl(repository)
+        return AddNewAIModelUseCaseImpl(
+            repository
+        )
     }
 
     @Provides
@@ -38,12 +38,5 @@ object UseCaseModule {
         repository: ModelRepository
     ): GetModelListUseCase {
         return GetModelListUseCaseImpl(repository)
-    }
-
-    @Provides
-    fun provideGetModelByIdUseCase(
-        repository: ModelRepository
-    ): GetModelByIdUseCase {
-        return GetModelByIdUseCaseImpl(repository)
     }
 }

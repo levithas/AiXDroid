@@ -9,17 +9,24 @@ import de.levithas.aixdroid.data.model.DBModelDataOutput
 import de.levithas.aixdroid.data.model.DBTensorData
 
 data class ModelData(
-    @Embedded val modelData: DBModelData,
+    @Embedded val modelData: DBModelData = DBModelData(
+        uri = "",  // Beispiel für einen leeren URI
+        name = "",
+        description = "",
+        version = "",
+        author = "",
+        licence = ""
+    ),
     @Relation(
         parentColumn = "uri",
         entityColumn = "id",
         associateBy = Junction(DBModelDataInput::class)
     )
-    val inputs: List<DBTensorData>,
+    val inputs: List<DBTensorData> = emptyList(),
     @Relation(
         parentColumn = "uri",
         entityColumn = "id",
         associateBy = Junction(DBModelDataOutput::class)
     )
-    val outputs: List<DBTensorData>
+    val outputs: List<DBTensorData> = emptyList()
 )

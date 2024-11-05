@@ -4,14 +4,10 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 
 @Entity(
-    primaryKeys = ["modelDataUri", "tensorId"],
-    foreignKeys = [
-        ForeignKey(entity = DBModelData::class, parentColumns = ["uri"], childColumns = ["modelDataUri"], onDelete = ForeignKey.CASCADE),
-        ForeignKey(entity = DBTensorData::class, parentColumns = ["id"], childColumns = ["tensorId"], onDelete = ForeignKey.CASCADE)
-    ]
+    primaryKeys = ["uri", "id"],
 )
 data class DBModelDataInput(
-    val modelDataUri: String,
-    val tensorId: Long
+    val uri: String,
+    val id: Long
 )
 

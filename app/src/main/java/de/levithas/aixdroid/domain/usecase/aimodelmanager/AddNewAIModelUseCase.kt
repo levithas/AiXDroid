@@ -14,14 +14,16 @@ interface AddNewAIModelUseCase {
 
 class AddNewAIModelUseCaseImpl @Inject constructor(
     private val modelRepository: ModelRepository,
-    private val checkAIModelPathValid: CheckAIModelPathValid
 ) : AddNewAIModelUseCase {
     override suspend operator fun invoke(uri: Uri) {
-        if(checkAIModelPathValid.invoke(uri))
+        if(checkUriValid(uri))
         {
+            val path = uri.path.toString().split("/")
+            val name = path[path.size-1]
+
             val dbModelData = DBModelData(
-                uri = uri.toString(),
-                name = uri.lastPathSegment.toString(),
+                uri = uri.path.toString(),
+                name = name,
                 description = "",
                 version = "",
                 author = "",
@@ -37,5 +39,9 @@ class AddNewAIModelUseCaseImpl @Inject constructor(
             )
             modelRepository.addModel(modelData)
         }
+    }
+
+    private fun checkUriValid(uri: Uri) : Boolean {
+        return true
     }
 }
