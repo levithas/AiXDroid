@@ -10,4 +10,7 @@
     <string name="external_intent_manager_title">External Intent Manager</string>
     <string name="bottom_navigation_apps">External Intents</string>
     <string name="bottom_navigation_apps_landscape">External\nIntents</string>
+    <string name="model_manager_edit_title">AI Model Editor</string>
+    <string name="model_manager_edit_name">Model Name</string>
+    <string name="model_manager_edit_path">Path to tflite-File</string>
 </resources>

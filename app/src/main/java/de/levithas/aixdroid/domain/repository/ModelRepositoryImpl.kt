@@ -1,54 +1,50 @@
 package de.levithas.aixdroid.domain.repository
 
-import de.levithas.aixdroid.data.dao.AIModelDao
-import de.levithas.aixdroid.data.model.AIModelConfigurationEntity
-import de.levithas.aixdroid.domain.model.ModelConfiguration
+import android.net.Uri
+import de.levithas.aixdroid.data.dao.ModelDataDao
+import de.levithas.aixdroid.data.model.DBModelData
+import de.levithas.aixdroid.data.model.DBModelDataInput
+import de.levithas.aixdroid.data.model.DBModelDataOutput
+import de.levithas.aixdroid.domain.model.ModelData
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import org.tensorflow.lite.schema.Metadata
 import javax.inject.Inject
-import kotlin.io.path.Path
-import kotlin.io.path.pathString
 
 class ModelRepositoryImpl @Inject constructor(
-    private val dao: AIModelDao
+    private val dao: ModelDataDao
 ) : ModelRepository {
-    override suspend fun getModelList(): Flow<List<ModelConfiguration>> {
-        return dao.getAllModels().map { entities -> entities.map {item -> item.toDomainModel()} }
+
+    override suspend fun addModel(model: ModelData) {
+        dao.insertModelData(model.modelData)
+        for (input in model.inputs) {
+            val tensorId = dao.insertTensorData(input)
+            dao.insertModelDataInput(DBModelDataInput(
+                modelDataUri = model.modelData.uri,
+                tensorId = tensorId
+            ))
+        }
+        for (output in model.outputs) {
+            val tensorId = dao.insertTensorData(output)
+            dao.insertModelDataOutput(DBModelDataOutput(
+                modelDataUri = model.modelData.uri,
+                tensorId = tensorId
+            ))
+        }
     }
 
-    override suspend fun getModel(id: Long): ModelConfiguration {
-        TODO("Not yet implemented")
+    override suspend fun getModel(uri: Uri): ModelData? {
+        return dao.getModelByPath(uri.toString())
     }
 
-    override suspend fun getModelByName(name: String): ModelConfiguration {
-        TODO("Not yet implemented")
+    override suspend fun getModelsByName(name: String): Flow<List<ModelData>> {
+        return dao.getModelsByName(name)
     }
 
-    override suspend fun addModel(model: ModelConfiguration) {
-        dao.insertModel(AIModelConfigurationEntity(
-            name = model.name,
-            path = model.path.pathString,
-            metadata = model.meta.toString(),
-        ))
+    override suspend fun getModelList(): Flow<List<ModelData>> {
+        return dao.getAllModels()
     }
 
-    override suspend fun updateModel(model: ModelConfiguration) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun deleteModel(id: Long) {
-        val model = dao.getModelById(id).first()
-        dao.deleteModel(model)
-    }
-
-    private fun AIModelConfigurationEntity.toDomainModel(): ModelConfiguration {
-        return ModelConfiguration(
-            id = this.id,
-            name = this.name,
-            path = Path(this.path),
-            meta = Metadata() // TODO: Implement the right Metadata content
-        )
+    override suspend fun deleteModel(uri: Uri) {
+        dao.deleteModel(uri.toString())
     }
 }

@@ -175,9 +175,9 @@ fun MainScreen(
 ) {
     // Wechseln zwischen den gewählten Tabs
     when (currentTab) {
-        0 -> ExternalIntentManagerComposable(modifier)
-        1 -> DataManagerComposable(modifier)
-        2 -> AIModelManagerComposable(modifier)
+        TAB_EXTERNAL_INTENT_MANAGER -> ExternalIntentManagerComposable(modifier)
+        TAB_DATA_MANAGER -> DataManagerComposable(modifier)
+        TAB_MODEL_MANAGER -> AIModelManagerComposable(modifier)
     }
 }
 

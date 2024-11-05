@@ -3,16 +3,14 @@ package de.levithas.aixdroid.presentation.ui.modelmanager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import de.levithas.aixdroid.domain.model.ModelConfiguration
+import de.levithas.aixdroid.domain.model.ModelData
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.AddNewAIModelUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCase
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelByIdUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelListUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.tensorflow.lite.schema.Metadata
 import java.nio.file.Path
 import javax.inject.Inject
 
@@ -20,12 +18,11 @@ import javax.inject.Inject
 class AIViewModel @Inject constructor(
     private val addNewAIModelUseCase: AddNewAIModelUseCase,
     private val getModelListUseCase: GetModelListUseCase,
-    private val getModelByIdUseCase: GetModelByIdUseCase,
     private val deleteModelUseCase: DeleteModelUseCase
 ) : ViewModel() {
 
-    private val _allModels = MutableStateFlow<List<ModelConfiguration>>(emptyList())
-    val allModels: StateFlow<List<ModelConfiguration>> get() = _allModels
+    private val _allModels = MutableStateFlow<List<ModelData>>(emptyList())
+    val allModels: StateFlow<List<ModelData>> get() = _allModels
 
     init {
         fetchAllModels()
@@ -39,15 +36,15 @@ class AIViewModel @Inject constructor(
         }
     }
 
-    fun addModelConfiguration(name: String, path: Path, metadata: Metadata) {
+    fun addModelConfiguration(path: Path) {
         viewModelScope.launch(Dispatchers.IO) {
-            addNewAIModelUseCase(name, path, metadata)
+            addNewAIModelUseCase(path)
         }
     }
 
-    fun deleteModelConfiguration(id: Long) {
+    fun deleteModelConfiguration(path: Path) {
         viewModelScope.launch(Dispatchers.IO) {
-            deleteModelUseCase.invoke(id)
+            deleteModelUseCase.invoke(path)
             fetchAllModels()
         }
     }

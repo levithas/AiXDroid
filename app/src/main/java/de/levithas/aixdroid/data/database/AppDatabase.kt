@@ -2,10 +2,18 @@ package de.levithas.aixdroid.data.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import de.levithas.aixdroid.data.dao.AIModelDao
-import de.levithas.aixdroid.data.model.AIModelConfigurationEntity
+import de.levithas.aixdroid.data.dao.ModelDataDao
+import de.levithas.aixdroid.data.model.DBModelData
+import de.levithas.aixdroid.data.model.DBModelDataInput
+import de.levithas.aixdroid.data.model.DBModelDataOutput
+import de.levithas.aixdroid.data.model.DBTensorData
 
-@Database(entities = [AIModelConfigurationEntity::class], version = 1)
+@Database(entities = [
+    DBModelData::class,
+    DBTensorData::class,
+    DBModelDataInput::class,
+    DBModelDataOutput::class
+                     ], version = 1)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun AIModelDao(): AIModelDao
+    abstract fun ModelDataDao(): ModelDataDao
 }

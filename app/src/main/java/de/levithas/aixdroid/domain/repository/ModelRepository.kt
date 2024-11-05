@@ -1,13 +1,13 @@
 package de.levithas.aixdroid.domain.repository
 
-import de.levithas.aixdroid.domain.model.ModelConfiguration
+import android.net.Uri
+import de.levithas.aixdroid.domain.model.ModelData
 import kotlinx.coroutines.flow.Flow
 
 interface ModelRepository {
-    suspend fun getModelList(): Flow<List<ModelConfiguration>>
-    suspend fun getModel(id: Long): ModelConfiguration
-    suspend fun getModelByName(name: String): ModelConfiguration
-    suspend fun addModel(model: ModelConfiguration)
-    suspend fun updateModel(model: ModelConfiguration)
-    suspend fun deleteModel(id: Long)
+    suspend fun getModelList(): Flow<List<ModelData>>
+    suspend fun getModel(uri: Uri): ModelData?
+    suspend fun getModelsByName(name: String): Flow<List<ModelData>>
+    suspend fun addModel(model: ModelData)
+    suspend fun deleteModel(uri: Uri)
 }
