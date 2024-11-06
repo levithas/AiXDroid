@@ -50,9 +50,9 @@ import de.levithas.aixdroid.presentation.ui.externalintentmanager.ExternalIntent
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelManagerComposable
 
 
-const val TAB_EXTERNAL_INTENT_MANAGER = 0
-const val TAB_DATA_MANAGER = 1
-const val TAB_MODEL_MANAGER = 2
+private const val TAB_EXTERNAL_INTENT_MANAGER = 0
+private const val TAB_DATA_MANAGER = 1
+private const val TAB_MODEL_MANAGER = 2
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {

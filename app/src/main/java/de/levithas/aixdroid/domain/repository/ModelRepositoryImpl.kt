@@ -83,7 +83,7 @@ class ModelRepositoryImpl @Inject constructor(
             shape = this.shape
                 .removeSurrounding("[","]")
                 .split(",")
-                .map { it.toInt() },
+                .map { it.trim().toInt() },
             min = this.min,
             max = this.max,
         )

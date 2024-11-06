@@ -4,11 +4,13 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -52,10 +54,11 @@ import de.levithas.aixdroid.domain.model.ModelData
 import de.levithas.aixdroid.domain.model.TensorData
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
+import de.levithas.aixdroid.utils.DisplayUtilities
 
 
-const val TAB_OVERVIEW = 0
-const val TAB_MODEL_DETAILS = 1
+private const val TAB_OVERVIEW = 0
+private const val TAB_MODEL_DETAILS = 1
 
 @Composable
 fun AIModelManagerComposable(
@@ -94,19 +97,24 @@ fun AIModelWindow(
         }
     }
 
+    var modelData by remember { mutableStateOf(ModelData()) }
+
     when (currentTab) {
         TAB_OVERVIEW -> AIModelOverview(
             modifier = modifier,
             modelList = modelList,
-        ) {
-            modelUriLauncher.launch("application/*")
-        }
+            onOpenDetails = { item ->
+                modelData = item
+                currentTab = TAB_MODEL_DETAILS
+            },
+            onAddNewModelPressed =  {
+                modelUriLauncher.launch("application/*")
+            }
+        )
         TAB_MODEL_DETAILS -> AIModelDetailScreen(
             modifier = modifier,
             onBackToOverview = onBackToOverview,
-            modelData = modelList.find { model ->
-                model.uri == modelUri
-            },
+            modelData = modelData,
             onDeleteModel = onDeleteModel
         )
     }
@@ -125,7 +133,8 @@ fun AIModelWindow(
 fun AIModelOverview(
     modifier: Modifier,
     modelList: List<ModelData>,
-    onAddNewModelPressed: () -> Unit
+    onAddNewModelPressed: () -> Unit,
+    onOpenDetails: (ModelData) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -144,7 +153,7 @@ fun AIModelOverview(
             AIModelItemList(
                 modifier = Modifier.weight(1f),
                 modelList = modelList,
-                onOpenDetails = {}
+                onOpenDetails = onOpenDetails
             )
             IconButton(
                 modifier = modifier
@@ -169,7 +178,7 @@ fun AIModelOverview(
 fun AIModelItemList(
     modifier: Modifier,
     modelList: List<ModelData>,
-    onOpenDetails: () -> Unit
+    onOpenDetails: (ModelData) -> Unit
 ) {
     Text("Willkommen im AI Model Manager!")
 
@@ -182,6 +191,7 @@ fun AIModelItemList(
             AIModelItem(
                 modifier = modifier,
                 model = model,
+                onOpenDetails = onOpenDetails
             )
         }
     }
@@ -191,22 +201,32 @@ fun AIModelItemList(
 fun AIModelItem(
     modifier: Modifier,
     model: ModelData,
+    onOpenDetails: (ModelData) -> Unit
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(8.dp)
+            .height(128.dp)
+            .clickable {
+                onOpenDetails(model)
+            }
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier,
+                style = MaterialTheme.typography.titleMedium,
                 text = model.name
+            )
+            Text(
+                modifier = Modifier,
+                style = MaterialTheme.typography.bodyMedium,
+                text = DisplayUtilities.shortenString(model.description, 100)
             )
         }
     }
@@ -216,7 +236,7 @@ fun AIModelItem(
 @Composable
 fun AIModelDetailScreen(
     modifier: Modifier,
-    modelData: ModelData?,
+    modelData: ModelData,
     onBackToOverview: () -> Unit,
     onDeleteModel: (Uri) -> Unit
 ) {
@@ -242,19 +262,24 @@ fun AIModelDetailScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            modelData?.name?.let { Text(it) }
-            Spacer(Modifier.height(16.dp))
-            modelData?.description?.let { Text(it) }
+            Text(
+                modifier = Modifier.padding(top = 8.dp),
+                style = MaterialTheme.typography.titleMedium,
+                text = modelData.name
+            )
+            Text(
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                text = modelData.description
+            )
         }
-        if(modelData != null) {
-            Button(
-                onClick = {
-                    onDeleteModel(modelData.uri)
-                    onBackToOverview()
-                }
-            ) {
-                Text("Delete Model")
+        Button(
+            onClick = {
+                onDeleteModel(modelData.uri)
+                onBackToOverview()
             }
+        ) {
+            Text("Delete Model")
         }
     }
 }
@@ -278,7 +303,10 @@ fun AIModelDeleteItemDialog(
                 tonalElevation = AlertDialogDefaults.TonalElevation
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Do you really want to delete this model? It has nothing done to you!")
+                    Text("Do you really want to delete this model? It has nothing done to you!\nReceived Message from Model:\n'Pleaasse don't " +
+                            "delete " +
+                            "me! I " +
+                            "will try to get better, I promise!' ")
                     Spacer(modifier = Modifier.height(24.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -307,7 +335,7 @@ val modelConfigurationPreview = ModelData(
 
     uri = Uri.parse("/pfad/zu/modell/TestModel.tflite"),
 
-    name = "TestModel",
+    name = "TestModel.tflite",
     description = "Hier steht eine echt tolle Beschreibung zu diesem Modell. Das hier ist nämlich die Ultimative KI, die die Weltherschaft an sich reißen wird!",
     version = "1.0.0",
     author = "Levithas",
@@ -368,7 +396,7 @@ fun Preview() {
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 @Composable
 fun AIModelItemPreview() {
-    AiXDroidTheme { AIModelItem(Modifier, modelConfigurationPreview) }
+    AiXDroidTheme { AIModelItem(Modifier, modelConfigurationPreview, {}) }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
