@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import de.levithas.aixdroid.data.model.DBModelData
 import de.levithas.aixdroid.data.model.DBModelDataInput
 import de.levithas.aixdroid.data.model.DBModelDataOutput
+import de.levithas.aixdroid.data.model.DBModelWithTensors
 import de.levithas.aixdroid.data.model.DBTensorData
 import de.levithas.aixdroid.domain.model.ModelData
 import kotlinx.coroutines.flow.Flow
@@ -30,14 +31,17 @@ interface ModelDataDao {
 
     @Transaction
     @Query("SELECT * FROM model_data WHERE uri == :uri")
-    fun getModelByPath(uri: String) : ModelData?
+    fun getModelByPath(uri: String) : DBModelWithTensors?
 
+    @Transaction
     @Query("SELECT * FROM model_data WHERE name == :name")
-    fun getModelsByName(name: String) : Flow<List<ModelData>>
+    fun getModelsByName(name: String) : Flow<List<DBModelWithTensors>>
 
+    @Transaction
     @Query("SELECT * FROM model_data")
-    fun getAllModels(): Flow<List<ModelData>>
+    fun getAllModels(): Flow<List<DBModelWithTensors>>
 
+    @Transaction
     @Query("DELETE FROM model_data WHERE uri == :uri")
     fun deleteModel(uri: String)
 }

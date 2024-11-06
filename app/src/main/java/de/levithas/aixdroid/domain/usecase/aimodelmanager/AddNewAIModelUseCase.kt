@@ -1,11 +1,9 @@
 package de.levithas.aixdroid.domain.usecase.aimodelmanager
 
 import android.net.Uri
-import de.levithas.aixdroid.data.model.DBModelData
-import de.levithas.aixdroid.data.model.DBTensorData
 import de.levithas.aixdroid.domain.model.ModelData
+import de.levithas.aixdroid.domain.model.TensorData
 import de.levithas.aixdroid.domain.repository.ModelRepository
-import java.nio.file.Path
 import javax.inject.Inject
 
 interface AddNewAIModelUseCase {
@@ -21,22 +19,17 @@ class AddNewAIModelUseCaseImpl @Inject constructor(
             val path = uri.path.toString().split("/")
             val name = path[path.size-1]
 
-            val dbModelData = DBModelData(
-                uri = uri.path.toString(),
+            val modelData = ModelData(
+                uri = uri,
                 name = name,
                 description = "",
                 version = "",
                 author = "",
-                licence = ""
+                licence = "",
+                inputs = emptyList(),
+                outputs = emptyList()
             )
-            var inputTensorList: List<DBTensorData> = emptyList()
-            var outputTensorList: List<DBTensorData> = emptyList()
 
-            val modelData = ModelData(
-                modelData = dbModelData,
-                inputs = inputTensorList,
-                outputs = outputTensorList
-            )
             modelRepository.addModel(modelData)
         }
     }

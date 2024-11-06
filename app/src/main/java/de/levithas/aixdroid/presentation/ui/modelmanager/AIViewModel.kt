@@ -1,5 +1,6 @@
 package de.levithas.aixdroid.presentation.ui.modelmanager
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,15 +37,15 @@ class AIViewModel @Inject constructor(
         }
     }
 
-    fun addModelConfiguration(path: Path) {
+    fun addModelConfiguration(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
-            addNewAIModelUseCase(path)
+            addNewAIModelUseCase(uri)
         }
     }
 
-    fun deleteModelConfiguration(path: Path) {
+    fun deleteModelConfiguration(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
-            deleteModelUseCase.invoke(path)
+            deleteModelUseCase.invoke(uri)
             fetchAllModels()
         }
     }
