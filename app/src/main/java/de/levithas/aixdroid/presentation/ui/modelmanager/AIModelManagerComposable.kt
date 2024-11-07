@@ -1,6 +1,5 @@
 package de.levithas.aixdroid.presentation.ui.modelmanager
 
-import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,7 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,8 +70,12 @@ fun AIModelManagerComposable(
     AIModelWindow(
         modifier = modifier,
         modelList = modelList,
-        onAddNewModel = { uri -> viewModel.addModelConfiguration(uri) },
-        onDeleteModel = { uri -> viewModel.deleteModelConfiguration(uri) }
+        onAddNewDataModel = {
+            uri -> viewModel.addDataModel(uri)
+                            },
+        onDeleteDataModel = {
+            uri -> viewModel.deleteDataModel(uri)
+        }
     )
 }
 
@@ -80,19 +84,19 @@ fun AIModelManagerComposable(
 fun AIModelWindow(
     modifier: Modifier,
     modelList: List<ModelData>,
-    onAddNewModel: (Uri) -> Unit,
-    onDeleteModel: (Uri) -> Unit,
+    onAddNewDataModel: (Uri) -> Unit,
+    onDeleteDataModel: (Uri) -> Unit,
 ) {
     var currentTab by rememberSaveable { mutableIntStateOf(TAB_OVERVIEW) }
     val onBackToOverview = { currentTab = TAB_OVERVIEW }
 
-    var showDeleteItemDialog = false
+    var showDeleteItemDialog by remember { mutableStateOf(false) }
 
     var modelUri by remember { mutableStateOf(Uri.EMPTY)}
     val modelUriLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
         modelUri = it
         if (modelUri != Uri.EMPTY) {
-            onAddNewModel(modelUri)
+            onAddNewDataModel(modelUri)
             modelUri = Uri.EMPTY
         }
     }
@@ -107,7 +111,7 @@ fun AIModelWindow(
                 modelData = item
                 currentTab = TAB_MODEL_DETAILS
             },
-            onAddNewModelPressed =  {
+            onAddNewDataModelRequested =  {
                 modelUriLauncher.launch("application/*")
             }
         )
@@ -115,17 +119,22 @@ fun AIModelWindow(
             modifier = modifier,
             onBackToOverview = onBackToOverview,
             modelData = modelData,
-            onDeleteModel = onDeleteModel
+            onDeleteModelRequested = { showDeleteItemDialog = true }
         )
     }
 
-    AIModelDeleteItemDialog(
-        modifier = Modifier,
-        modelUri = modelUri,
-        onDismiss = { showDeleteItemDialog = false },
-        showDialog = showDeleteItemDialog,
-        onDeleteModel = onDeleteModel
-    )
+    if (showDeleteItemDialog) {
+        AIModelDeleteItemDialog(
+            modifier = Modifier,
+            modelUri = modelData.uri,
+            onDismiss = { showDeleteItemDialog = false },
+            onDeleteModel = { uri ->
+                showDeleteItemDialog = false
+                onBackToOverview()
+                onDeleteDataModel(uri)
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,7 +142,7 @@ fun AIModelWindow(
 fun AIModelOverview(
     modifier: Modifier,
     modelList: List<ModelData>,
-    onAddNewModelPressed: () -> Unit,
+    onAddNewDataModelRequested: () -> Unit,
     onOpenDetails: (ModelData) -> Unit
 ) {
     Scaffold(
@@ -166,7 +175,7 @@ fun AIModelOverview(
                     disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     disabledContentColor = MaterialTheme.colorScheme.tertiary
                 ),
-                onClick = onAddNewModelPressed
+                onClick = onAddNewDataModelRequested
             ) {
                 Icon(Icons.Filled.Add , "Add" , modifier = Modifier)
             }
@@ -238,7 +247,7 @@ fun AIModelDetailScreen(
     modifier: Modifier,
     modelData: ModelData,
     onBackToOverview: () -> Unit,
-    onDeleteModel: (Uri) -> Unit
+    onDeleteModelRequested: (Uri) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -256,30 +265,36 @@ fun AIModelDetailScreen(
         },
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(paddingValues).fillMaxHeight(),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.titleMedium,
-                text = modelData.name
-            )
-            Text(
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                text = modelData.description
-            )
-        }
-        Button(
-            onClick = {
-                onDeleteModel(modelData.uri)
-                onBackToOverview()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    text = modelData.name
+                )
+                Text(
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    text = modelData.description
+                )
             }
-        ) {
-            Text("Delete Model")
+
+            Button(
+                modifier = modifier.fillMaxWidth().padding(16.dp),
+                onClick = {
+                    onDeleteModelRequested(modelData.uri)
+                }
+            ) {
+                Text("Delete Model")
+            }
         }
     }
 }
@@ -288,41 +303,37 @@ fun AIModelDetailScreen(
 @Composable
 fun AIModelDeleteItemDialog(
     modifier: Modifier,
-    modelUri: Uri?,
-    showDialog: Boolean,
+    modelUri: Uri,
     onDeleteModel: (Uri) -> Unit,
     onDismiss: () -> Unit
 ) {
-    if(showDialog) {
-        BasicAlertDialog(
-            onDismissRequest = onDismiss
+    BasicAlertDialog(
+        onDismissRequest = onDismiss
+    ) {
+        Surface(
+            modifier = Modifier.wrapContentWidth().wrapContentHeight(),
+            shape = MaterialTheme.shapes.large,
+            tonalElevation = AlertDialogDefaults.TonalElevation
         ) {
-            Surface(
-                modifier = Modifier.wrapContentWidth().wrapContentHeight(),
-                shape = MaterialTheme.shapes.large,
-                tonalElevation = AlertDialogDefaults.TonalElevation
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Do you really want to delete this model? It has nothing done to you!\nReceived Message from Model:\n'Pleaasse don't " +
-                            "delete " +
-                            "me! I " +
-                            "will try to get better, I promise!' ")
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Do you really want to delete this model? It has nothing done to you!\n\nReceived Message from Model:\n'Pleaasse don't " +
+                        "delete me! I will try to get better, I promise!' "
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(
+                        onClick = { onDeleteModel(modelUri) }
                     ) {
-                        TextButton(
-                            onClick = { if (modelUri != null) onDeleteModel(modelUri) }
-                        ) {
-                            Text("Confirm")
-                        }
-                        TextButton(
-                            onClick = onDismiss,
-                        ) {
-                            Text("Dismiss")
-                        }
+                        Text("Confirm")
+                    }
+                    TextButton(
+                        onClick = onDismiss,
+                    ) {
+                        Text("Dismiss")
                     }
                 }
             }
@@ -335,7 +346,7 @@ val modelConfigurationPreview = ModelData(
 
     uri = Uri.parse("/pfad/zu/modell/TestModel.tflite"),
 
-    name = "TestModel.tflite",
+    name = "TestModel",
     description = "Hier steht eine echt tolle Beschreibung zu diesem Modell. Das hier ist nämlich die Ultimative KI, die die Weltherschaft an sich reißen wird!",
     version = "1.0.0",
     author = "Levithas",
@@ -415,7 +426,7 @@ fun AIModelDeleteDialogPreview() {
     AIModelDeleteItemDialog(
         Modifier,
         modelConfigurationPreview.uri,
-        true,
+        {},
         {}
-    ) { }
+    )
 }
