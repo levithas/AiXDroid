@@ -39,7 +39,7 @@ class AddNewAIModelUseCaseImpl @Inject constructor(
                     TensorData(
                         name = extractor.getInputTensorMetadata(idx)?.name()?: "",
                         description = extractor.getInputTensorMetadata(idx)?.description()?: "",
-                        type = extractor.getInputTensorType(idx).toString(), // TODO: Umwandlung in ein lesbares Enum
+                        type = extractor.getInputTensorType(idx),
                         shape = extractor.getInputTensorShape(idx).toList(),
                         min = 0.0f,
                         max = 0.0f,
@@ -51,7 +51,7 @@ class AddNewAIModelUseCaseImpl @Inject constructor(
                     TensorData(
                         name = extractor.getOutputTensorMetadata(idx)?.name()?: "",
                         description = extractor.getOutputTensorMetadata(idx)?.description()?: "",
-                        type = extractor.getOutputTensorType(idx).toString(), // TODO: Umwandlung in ein lesbares Enum,
+                        type = extractor.getOutputTensorType(idx),
                         shape = extractor.getOutputTensorShape(idx).toList(),
                         min = 0.0f,
                         max = 0.0f,

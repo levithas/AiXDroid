@@ -9,7 +9,7 @@ data class DBTensorData(
 
     val name: String,
     val description: String,
-    val type: String,
+    val type: Byte,
     val shape: String,
     val min: Float,
     val max: Float

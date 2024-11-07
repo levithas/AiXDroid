@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "23c1fb5266d237badc027486eba2a376",
+    "identityHash": "e72385ab9a83377e302856900a904207",
     "entities": [
       {
         "tableName": "model_data",
@@ -56,7 +56,7 @@
       },
       {
         "tableName": "tensor",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `type` TEXT NOT NULL, `shape` TEXT NOT NULL, `min` REAL NOT NULL, `max` REAL NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `type` INTEGER NOT NULL, `shape` TEXT NOT NULL, `min` REAL NOT NULL, `max` REAL NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -79,7 +79,7 @@
           {
             "fieldPath": "type",
             "columnName": "type",
-            "affinity": "TEXT",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -214,7 +214,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '23c1fb5266d237badc027486eba2a376')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e72385ab9a83377e302856900a904207')"
     ]
   }
 }

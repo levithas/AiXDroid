@@ -57,6 +57,7 @@ import de.levithas.aixdroid.domain.model.TensorData
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
 import de.levithas.aixdroid.utils.DisplayUtilities
+import org.tensorflow.lite.schema.TensorType
 
 
 private const val TAB_OVERVIEW = 0
@@ -302,7 +303,7 @@ fun AIModelDetailScreen(
                         ) {
                             Text(tensor.name)
                             Spacer(Modifier.width(8.dp))
-                            Text(tensor.type)
+                            Text(TensorType.name(tensor.type.toInt()))
                         }
                     }
                 }
@@ -318,7 +319,7 @@ fun AIModelDetailScreen(
                         ) {
                             Text(tensor.name)
                             Spacer(Modifier.width(8.dp))
-                            Text(tensor.type)
+                            Text(TensorType.name(tensor.type.toInt()))
                         }
                     }
                 }
@@ -392,7 +393,7 @@ val modelConfigurationPreview = ModelData(
         TensorData(
             name = "Nachricht",
             description = "Enthält die Nachricht die du an das Modell schicken willst",
-            type = "String",
+            type = TensorType.STRING,
             shape = arrayOf(10,2,300).toList(),
             min = 0.0f,
             max = 1.0f,
@@ -400,7 +401,7 @@ val modelConfigurationPreview = ModelData(
         TensorData(
             name = "Herzfrequenz",
             description = "Dein Herzschlag, damit das Modell weiß, dass du Angst hast!",
-            type = "Float32",
+            type = TensorType.FLOAT32,
             shape = arrayOf(1,2,300).toList(),
             min = 0.0f,
             max = 200.0f,
@@ -410,7 +411,7 @@ val modelConfigurationPreview = ModelData(
         TensorData(
             name = "Antwort",
             description = "Enthält die Nachricht des Modells an dich",
-            type = "String",
+            type = TensorType.STRING,
             shape = arrayOf(10,2,300).toList(),
             min = 0.0f,
             max = 1.0f,
@@ -418,7 +419,7 @@ val modelConfigurationPreview = ModelData(
         TensorData(
             name = "Zerstörungsthreshold",
             description = "Der Wert gibt an, wie sehr das Modell die Welt vernichten möchte (0 = garnicht, 1 = sofort)",
-            type = "Float32",
+            type = TensorType.FLOAT32,
             shape = arrayOf(1,2,300).toList(),
             min = 0.0f,
             max = 1.0f,
