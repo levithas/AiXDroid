@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -285,6 +287,41 @@ fun AIModelDetailScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     text = modelData.description
                 )
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(32.dp)
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(modelData.inputs) { tensor ->
+                        Row(
+                            modifier = Modifier,
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Text(tensor.name)
+                            Spacer(Modifier.width(8.dp))
+                            Text(tensor.type)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(modelData.outputs) { tensor ->
+                        Row(
+                            modifier = Modifier,
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Text(tensor.name)
+                            Spacer(Modifier.width(8.dp))
+                            Text(tensor.type)
+                        }
+                    }
+                }
             }
 
             Button(

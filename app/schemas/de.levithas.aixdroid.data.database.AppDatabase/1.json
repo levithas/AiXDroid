@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "59f4d67b4d856b3e37d130ccc8c67ebc",
+    "identityHash": "23c1fb5266d237badc027486eba2a376",
     "entities": [
       {
         "tableName": "model_data",
@@ -112,7 +112,7 @@
       },
       {
         "tableName": "DBModelDataInput",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `id` INTEGER NOT NULL, PRIMARY KEY(`uri`, `id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `id` INTEGER NOT NULL, PRIMARY KEY(`uri`, `id`), FOREIGN KEY(`uri`) REFERENCES `model_data`(`uri`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`id`) REFERENCES `tensor`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "uri",
@@ -135,11 +135,34 @@
           ]
         },
         "indices": [],
-        "foreignKeys": []
+        "foreignKeys": [
+          {
+            "table": "model_data",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "uri"
+            ],
+            "referencedColumns": [
+              "uri"
+            ]
+          },
+          {
+            "table": "tensor",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       },
       {
         "tableName": "DBModelDataOutput",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `id` INTEGER NOT NULL, PRIMARY KEY(`uri`, `id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `id` INTEGER NOT NULL, PRIMARY KEY(`uri`, `id`), FOREIGN KEY(`uri`) REFERENCES `model_data`(`uri`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`id`) REFERENCES `tensor`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "uri",
@@ -162,13 +185,36 @@
           ]
         },
         "indices": [],
-        "foreignKeys": []
+        "foreignKeys": [
+          {
+            "table": "model_data",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "uri"
+            ],
+            "referencedColumns": [
+              "uri"
+            ]
+          },
+          {
+            "table": "tensor",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '59f4d67b4d856b3e37d130ccc8c67ebc')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '23c1fb5266d237badc027486eba2a376')"
     ]
   }
 }
