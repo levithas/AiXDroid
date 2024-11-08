@@ -3,10 +3,15 @@ package de.levithas.aixdroid.presentation.ui.modelmanager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -19,6 +24,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -44,9 +51,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusModifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -75,14 +83,13 @@ fun AIModelManagerComposable(
         modelList = modelList,
         onAddNewDataModel = {
             uri -> viewModel.addDataModel(uri)
-                            },
+        },
         onDeleteDataModel = {
             uri -> viewModel.deleteDataModel(uri)
         }
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIModelWindow(
     modifier: Modifier,
@@ -91,7 +98,6 @@ fun AIModelWindow(
     onDeleteDataModel: (Uri) -> Unit,
 ) {
     var currentTab by rememberSaveable { mutableIntStateOf(TAB_OVERVIEW) }
-    val onBackToOverview = { currentTab = TAB_OVERVIEW }
 
     var showDeleteItemDialog by remember { mutableStateOf(false) }
 
@@ -120,7 +126,7 @@ fun AIModelWindow(
         )
         TAB_MODEL_DETAILS -> AIModelDetailScreen(
             modifier = modifier,
-            onBackToOverview = onBackToOverview,
+            onBackToOverview = { currentTab = TAB_OVERVIEW },
             modelData = modelData,
             onDeleteModelRequested = { showDeleteItemDialog = true }
         )
@@ -133,7 +139,7 @@ fun AIModelWindow(
             onDismiss = { showDeleteItemDialog = false },
             onDeleteModel = { uri ->
                 showDeleteItemDialog = false
-                onBackToOverview()
+                currentTab = TAB_OVERVIEW
                 onDeleteDataModel(uri)
             }
         )
@@ -268,9 +274,11 @@ fun AIModelDetailScreen(
         },
     ) { paddingValues ->
         Column(
-            modifier = Modifier.padding(paddingValues).fillMaxHeight(),
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(paddingValues),
             verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(
                 modifier = Modifier
@@ -280,49 +288,65 @@ fun AIModelDetailScreen(
             ) {
                 Text(
                     modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     text = modelData.name
                 )
-                Text(
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    text = modelData.description
-                )
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        modifier = Modifier.padding(horizontal = 16.dp).align(AbsoluteAlignment.Left),
+                        style = MaterialTheme.typography.titleMedium,
+                        text = "Description:"
+                    )
+                    Text(
+                        modifier = Modifier.padding(horizontal = 16.dp).align(AbsoluteAlignment.Left),
+                        style = MaterialTheme.typography.bodyMedium,
+                        text = modelData.description
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Text(style = MaterialTheme.typography.titleMedium, text = "URI:")
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = modelData.uri.toString())
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Text(style = MaterialTheme.typography.titleMedium, text = "Author:")
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = modelData.author)
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Text(style = MaterialTheme.typography.titleMedium, text = "Licence:")
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = modelData.licence)
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Text(style = MaterialTheme.typography.titleMedium, text = "Version:")
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = modelData.version)
+                    }
+                }
+
             }
             Column(
-                modifier = Modifier.fillMaxWidth().padding(32.dp)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(modelData.inputs) { tensor ->
-                        Row(
-                            modifier = Modifier,
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            Text(tensor.name)
-                            Spacer(Modifier.width(8.dp))
-                            Text(TensorType.name(tensor.type.toInt()))
-                        }
-                    }
-                }
+                Text("Input Tensors", style = MaterialTheme.typography.titleMedium)
+                TensorTable(Modifier, modelData.inputs)
                 Spacer(Modifier.height(16.dp))
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(modelData.outputs) { tensor ->
-                        Row(
-                            modifier = Modifier,
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            Text(tensor.name)
-                            Spacer(Modifier.width(8.dp))
-                            Text(TensorType.name(tensor.type.toInt()))
-                        }
-                    }
-                }
+                Text("Outputput Tensors", style = MaterialTheme.typography.titleMedium)
+                TensorTable(Modifier, modelData.outputs, column1Weight = .7f, column2Weight = .3f)
             }
 
             Button(
@@ -336,6 +360,48 @@ fun AIModelDetailScreen(
         }
     }
 }
+
+@Composable
+fun RowScope.TableCell(
+    text: String,
+    weight: Float
+) {
+    Text(
+        text = text,
+        Modifier.border(1.dp, Color.Black)
+            .weight(weight)
+            .padding(8.dp)
+    )
+}
+
+@Composable
+fun TensorTable(
+    modifier: Modifier,
+    tensorList: List<TensorData>,
+    column1Weight: Float = .4f,
+    column2Weight: Float = .6f
+) {
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        userScrollEnabled = false
+    ) {
+        item {
+            Row(Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+                TableCell(text = "Feature", weight = column1Weight)
+                TableCell(text = "Datatype", weight = column2Weight)
+            }
+        }
+        items(tensorList) { item ->
+            Row(Modifier.fillMaxWidth()) {
+                TableCell(text = item.name, weight = column1Weight)
+                TableCell(text = TensorType.name(item.type.toInt()), weight = column2Weight)
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -366,12 +432,12 @@ fun AIModelDeleteItemDialog(
                     TextButton(
                         onClick = { onDeleteModel(modelUri) }
                     ) {
-                        Text("Confirm")
+                        Text("DELETE", style = MaterialTheme.typography.headlineMedium)
                     }
                     TextButton(
                         onClick = onDismiss,
                     ) {
-                        Text("Dismiss")
+                        Text("Dismiss", style = MaterialTheme.typography.headlineSmall)
                     }
                 }
             }

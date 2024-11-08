@@ -28,7 +28,6 @@ fun DataManagerComposable(
     val viewModel: DataViewModel by remember { mutableStateOf(DataViewModel()) }
 
     Scaffold(
-        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.data_manager_title)) },
@@ -39,7 +38,6 @@ fun DataManagerComposable(
         // Hauptinhalt des DataManagerScreens
         Column(modifier = Modifier.padding(paddingValues)) {
             Text("Willkommen im Data Manager!")
-
         }
     }
 }
