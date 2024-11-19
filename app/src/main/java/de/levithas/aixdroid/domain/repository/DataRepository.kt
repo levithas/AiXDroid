@@ -6,7 +6,7 @@ interface DataRepository {
     suspend fun getDatasetList(): List<Dataset>
     suspend fun getDataset(id: Long): Dataset
     suspend fun getDatasetByName(name: String): Dataset
-    suspend fun AddDataset()
+    suspend fun addDataset()
     suspend fun updateDataset(dataset: Dataset)
     suspend fun deleteDataset(id: Long)
 }

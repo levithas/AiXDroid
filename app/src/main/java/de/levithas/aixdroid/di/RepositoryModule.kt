@@ -4,7 +4,10 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import de.levithas.aixdroid.data.dao.DatasetDao
 import de.levithas.aixdroid.data.dao.ModelDataDao
+import de.levithas.aixdroid.domain.repository.DataRepository
+import de.levithas.aixdroid.domain.repository.DataRepositoryImpl
 import de.levithas.aixdroid.domain.repository.ModelRepository
 import de.levithas.aixdroid.domain.repository.ModelRepositoryImpl
 import javax.inject.Singleton
@@ -19,5 +22,13 @@ object RepositoryModule {
         dao: ModelDataDao
     ) : ModelRepository {
         return ModelRepositoryImpl(dao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDataRepository(
+        dao: DatasetDao
+    ) : DataRepository {
+        return DataRepositoryImpl(dao)
     }
 }
