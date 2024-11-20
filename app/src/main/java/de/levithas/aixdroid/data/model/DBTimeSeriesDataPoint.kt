@@ -8,9 +8,9 @@ import androidx.room.PrimaryKey
     foreignKeys = [
         ForeignKey(
             entity = DBTimeSeries::class,
-            parentColumns = ["id"],
-            childColumns = ["id"],
-            onDelete = ForeignKey.CASCADE,
+            parentColumns = arrayOf("id"),
+            childColumns = arrayOf("dataSeriesId"),
+            onDelete = ForeignKey.CASCADE
         )
     ]
 )
@@ -20,5 +20,5 @@ data class DBTimeSeriesDataPoint(
     val timeTick: Long,
     val value: Float,
 
-    val columnId: Long
+    val dataSeriesId: Long
 )

@@ -6,14 +6,14 @@ import de.levithas.aixdroid.domain.repository.DataRepository
 import java.net.URI
 import javax.inject.Inject
 
-interface ExportDataUseCase {
-    suspend operator fun invoke(context: Context, dataSet: DataSet, uri: URI)
+interface ImportDataUseCase {
+    suspend operator fun invoke(context: Context, uri: URI)
 }
 
-class ExportDataUseCaseImpl @Inject constructor (
+class ImportDataUseCaseImpl @Inject constructor(
     private val dataRepository: DataRepository
-) : ExportDataUseCase {
-    override suspend fun invoke(context: Context, dataSet: DataSet, uri: URI) {
+) : ImportDataUseCase {
+    override suspend fun invoke(context: Context, uri: URI) {
         TODO("Not yet implemented")
     }
 }

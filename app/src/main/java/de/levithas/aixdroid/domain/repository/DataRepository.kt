@@ -1,12 +1,12 @@
 package de.levithas.aixdroid.domain.repository
 
-import de.levithas.aixdroid.domain.model.Dataset
+import de.levithas.aixdroid.domain.model.DataSet
+import kotlinx.coroutines.flow.Flow
 
 interface DataRepository {
-    suspend fun getDatasetList(): List<Dataset>
-    suspend fun getDataset(id: Long): Dataset
-    suspend fun getDatasetByName(name: String): Dataset
-    suspend fun addDataset()
-    suspend fun updateDataset(dataset: Dataset)
-    suspend fun deleteDataset(id: Long)
+    suspend fun getDataSetList(): Flow<List<DataSet>>
+    suspend fun getDataSet(id: Long) : DataSet?
+    suspend fun getDataSetsByName(name: String) : Flow<List<DataSet>>
+    suspend fun addDataSet(dataSet: DataSet) : Long
+    suspend fun deleteDataSet(id: Long)
 }

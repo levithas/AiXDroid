@@ -38,18 +38,18 @@ class ModelRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getModel(uri: Uri): ModelData? {
-        return dao.getModelByPath(uri.toString())?.toModelData()
+        return dao.getModelByPath(uri.toString())?.toDomainModel()
     }
 
     override suspend fun getModelsByName(name: String): Flow<List<ModelData>> {
         return dao.getModelsByName(name).map { models ->
-                models.map { it.toModelData() }
+                models.map { it.toDomainModel() }
         }
     }
 
     override suspend fun getModelList(): Flow<List<ModelData>> {
         return dao.getAllModels().map { models ->
-            models.map { it.toModelData() }
+            models.map { it.toDomainModel() }
         }
     }
 
@@ -57,7 +57,7 @@ class ModelRepositoryImpl @Inject constructor(
         dao.deleteModel(uri.toString())
     }
 
-    private fun DBModelWithTensors.toModelData() : ModelData {
+    private fun DBModelWithTensors.toDomainModel() : ModelData {
         return ModelData(
             uri = Uri.parse(this.modelData.uri),
             name = this.modelData.name,

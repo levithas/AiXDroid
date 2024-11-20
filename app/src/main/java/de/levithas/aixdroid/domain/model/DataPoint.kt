@@ -2,8 +2,8 @@ package de.levithas.aixdroid.domain.model
 
 import java.util.Date
 
-data class Datapoint(
+data class DataPoint(
+    val id: Long,
     val value: Float,
-    val unit: String,
-    val createdAt: Date
+    val time: Date
 )

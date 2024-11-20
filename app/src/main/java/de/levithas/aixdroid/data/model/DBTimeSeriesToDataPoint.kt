@@ -4,23 +4,23 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 
 @Entity(
-    primaryKeys = ["datasetId", "timeSeriesId"],
+    primaryKeys = ["timeSeriesId", "dataPointId"],
     foreignKeys = [
-        ForeignKey(
-            entity = DBDataset::class,
-            parentColumns = ["id"],
-            childColumns = ["datasetId"],
-            onDelete = ForeignKey.CASCADE
-        ),
         ForeignKey(
             entity = DBTimeSeries::class,
             parentColumns = ["id"],
             childColumns = ["timeSeriesId"],
             onDelete = ForeignKey.CASCADE
         ),
+        ForeignKey(
+            entity = DBTimeSeriesDataPoint::class,
+            parentColumns = ["id"],
+            childColumns = ["dataPointId"],
+            onDelete = ForeignKey.CASCADE
+        ),
     ]
 )
-data class DBDatasetToTimeSeries(
-    val datasetId: Long,
-    val timeSeriesId: Long
+data class DBTimeSeriesToDataPoint(
+    val timeSeriesId: Long,
+    val dataPointId: Long
 )
