@@ -17,7 +17,7 @@ import de.levithas.aixdroid.domain.usecase.datamanager.ReadTextFileUseCaseImpl
 
 @Module
 @InstallIn(SingletonComponent::class)
-object UseCaseModule {
+object AIModelManagerUseCaseModule {
 
     @Provides
     fun provideAddNewAIModelUseCase(
@@ -29,7 +29,7 @@ object UseCaseModule {
     }
 
     @Provides
-    fun provideDeleteModelUsecase(
+    fun provideDeleteModelUseCase(
         repository: ModelRepository
     ): DeleteModelUseCase {
         return DeleteModelUseCaseImpl(repository)
@@ -40,10 +40,5 @@ object UseCaseModule {
         repository: ModelRepository
     ): GetModelListUseCase {
         return GetModelListUseCaseImpl(repository)
-    }
-
-    @Provides
-    fun provideReadTextFileUseCase(): ReadTextFileUseCase {
-        return ReadTextFileUseCaseImpl()
     }
 }

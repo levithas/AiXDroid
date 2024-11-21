@@ -15,17 +15,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import de.levithas.aixdroid.R
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
+import de.levithas.aixdroid.presentation.ui.modelmanager.AIViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataManagerComposable(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: DataViewModel = hiltViewModel()
 ) {
-    val viewModel: DataViewModel by remember { mutableStateOf(DataViewModel()) }
 
     Scaffold(
         topBar = {
