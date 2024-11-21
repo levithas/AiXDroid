@@ -10,5 +10,6 @@ interface DataRepository {
     suspend fun getDataSet(id: Long) : DataSet?
     suspend fun getDataSetsByName(name: String) : Flow<List<DataSet>>
     suspend fun addDataSet(dataSet: DataSet) : Long
+    suspend fun deleteDataSeries(id: Long)
     suspend fun deleteDataSet(id: Long)
 }

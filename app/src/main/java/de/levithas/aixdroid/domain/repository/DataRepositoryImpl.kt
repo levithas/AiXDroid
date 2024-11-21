@@ -50,6 +50,10 @@ class DataRepositoryImpl @Inject constructor(
         return dbDataSetId
     }
 
+    override suspend fun deleteDataSeries(id: Long) {
+        return dao.deleteDataSeries(id)
+    }
+
     override suspend fun deleteDataSet(id: Long) {
         return dao.deleteDataSet(id)
     }
@@ -67,15 +71,14 @@ class DataRepositoryImpl @Inject constructor(
         return DBDataSeries(
             id = this.id,
             name = this.name,
-            startTime = this.startTime.time,
-            valueUnit = this.unit
+            unit = this.unit
         )
     }
 
     private fun DataPoint.toDBModel(dataSeriesId: Long) : DBDataPoint {
         return DBDataPoint(
             id = this.id,
-            timeTick = this.time.time,
+            time = this.time.time,
             value = this.value,
             dataSeriesId = dataSeriesId
         )
@@ -85,8 +88,7 @@ class DataRepositoryImpl @Inject constructor(
         return DataSeries(
             id = this.id,
             name = this.name,
-            startTime = Date(this.startTime),
-            unit = this.valueUnit,
+            unit = this.unit,
             data = dao.getDataPointsByDataSeriesId(this.id).map { flow -> flow.map { it.toDomainModel() } }
         )
     }
@@ -95,7 +97,7 @@ class DataRepositoryImpl @Inject constructor(
         return DataPoint(
             id = this.id,
             value = this.value,
-            time = Date(this.timeTick),
+            time = Date(this.time),
         )
     }
 

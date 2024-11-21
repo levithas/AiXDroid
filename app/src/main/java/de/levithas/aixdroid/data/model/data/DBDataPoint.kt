@@ -17,7 +17,7 @@ import androidx.room.PrimaryKey
 data class DBDataPoint(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
 
-    val timeTick: Long,
+    val time: Long,
     val value: Float,
 
     val dataSeriesId: Long

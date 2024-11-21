@@ -48,6 +48,10 @@ interface DataSetDao {
     fun getDataSetsByName(name: String) : Flow<List<DBDataSetWithDataSeries>>
 
     @Transaction
+    @Query("DELETE FROM DBDataSeries WHERE id == :id")
+    fun deleteDataSeries(id: Long)
+
+    @Transaction
     @Query("DELETE FROM dbdataset WHERE id == :id")
     fun deleteDataSet(id: Long)
 }
