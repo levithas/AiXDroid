@@ -1,10 +1,10 @@
-package de.levithas.aixdroid.data.model
+package de.levithas.aixdroid.data.model.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 
 @Entity(
-    primaryKeys = ["dataSetId", "timeSeriesId"],
+    primaryKeys = ["dataSetId", "dataSeriesId"],
     foreignKeys = [
         ForeignKey(
             entity = DBDataSet::class,
@@ -13,14 +13,14 @@ import androidx.room.ForeignKey
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
-            entity = DBTimeSeries::class,
+            entity = DBDataSeries::class,
             parentColumns = ["id"],
-            childColumns = ["timeSeriesId"],
+            childColumns = ["dataSeriesId"],
             onDelete = ForeignKey.CASCADE
         ),
     ]
 )
-data class DBDataSetToTimeSeries(
+data class DBDataSetToDataSeries(
     val dataSetId: Long,
-    val timeSeriesId: Long
+    val dataSeriesId: Long
 )

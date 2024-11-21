@@ -1,17 +1,15 @@
 package de.levithas.aixdroid.data.dao
 
-import android.net.Uri
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import de.levithas.aixdroid.data.model.DBModelData
-import de.levithas.aixdroid.data.model.DBModelDataInput
-import de.levithas.aixdroid.data.model.DBModelDataOutput
-import de.levithas.aixdroid.data.model.DBModelWithTensors
-import de.levithas.aixdroid.data.model.DBTensorData
-import de.levithas.aixdroid.domain.model.ModelData
+import de.levithas.aixdroid.data.model.ai.DBModelData
+import de.levithas.aixdroid.data.model.ai.DBModelDataInput
+import de.levithas.aixdroid.data.model.ai.DBModelDataOutput
+import de.levithas.aixdroid.data.model.ai.DBModelWithTensors
+import de.levithas.aixdroid.data.model.ai.DBTensorData
 import kotlinx.coroutines.flow.Flow
 
 @Dao

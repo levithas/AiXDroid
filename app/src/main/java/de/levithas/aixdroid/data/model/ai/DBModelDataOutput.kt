@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.data.model
+package de.levithas.aixdroid.data.model.ai
 
 import androidx.room.Entity
 import androidx.room.ForeignKey

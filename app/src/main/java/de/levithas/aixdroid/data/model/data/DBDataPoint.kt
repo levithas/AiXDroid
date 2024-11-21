@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.data.model
+package de.levithas.aixdroid.data.model.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -7,19 +7,18 @@ import androidx.room.PrimaryKey
 @Entity(
     foreignKeys = [
         ForeignKey(
-            entity = DBDataSet::class,
+            entity = DBDataSeries::class,
             parentColumns = arrayOf("id"),
-            childColumns = arrayOf("dataSetId"),
+            childColumns = arrayOf("dataSeriesId"),
             onDelete = ForeignKey.CASCADE
         )
     ]
 )
-data class DBTimeSeries(
+data class DBDataPoint(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
 
-    val name: String,
-    val startTime: Long,
-    val valueUnit: String,
+    val timeTick: Long,
+    val value: Float,
 
-    val dataSetId: Long
+    val dataSeriesId: Long
 )

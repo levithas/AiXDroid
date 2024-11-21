@@ -5,13 +5,11 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import de.levithas.aixdroid.data.model.DBDataSet
-import de.levithas.aixdroid.data.model.DBDataSetToTimeSeries
-import de.levithas.aixdroid.data.model.DBDataSetWithTimeSeries
-import de.levithas.aixdroid.data.model.DBTimeSeries
-import de.levithas.aixdroid.data.model.DBTimeSeriesDataPoint
-import de.levithas.aixdroid.data.model.DBTimeSeriesToDataPoint
-import de.levithas.aixdroid.domain.model.DataSeries
+import de.levithas.aixdroid.data.model.data.DBDataSet
+import de.levithas.aixdroid.data.model.data.DBDataSetToDataSeries
+import de.levithas.aixdroid.data.model.data.DBDataSetWithDataSeries
+import de.levithas.aixdroid.data.model.data.DBDataSeries
+import de.levithas.aixdroid.data.model.data.DBDataPoint
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -21,29 +19,33 @@ interface DataSetDao {
     suspend fun insertDataSet(dataSet: DBDataSet) : Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTimeSeries(dataSeries: DBTimeSeries) : Long
+    suspend fun insertDataSeries(dataSeries: DBDataSeries) : Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTimeSeriesDataPoint(dataPoint: DBTimeSeriesDataPoint) : Long
+    suspend fun insertDataPoint(dataPoint: DBDataPoint) : Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTimeSeriesToDataPoint(dbTimeSeriesToDataPoint: DBTimeSeriesToDataPoint) : Long
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertDataSetToTimeSeries(dbDataSetToTimeSeries: DBDataSetToTimeSeries) : Long
-
+    suspend fun insertDataSetToDataSeries(dbDataSetToDataSeries: DBDataSetToDataSeries) : Long
 
     @Transaction
     @Query("SELECT * FROM dbdataset")
-    fun getAllDataSets(): Flow<List<DBDataSetWithTimeSeries>>
+    fun getAllDataSets(): Flow<List<DBDataSetWithDataSeries>>
+
+    @Transaction
+    @Query("SELECT * FROM DBDataSeries")
+    fun getAllDataSeries(): Flow<List<DBDataSeries>>
 
     @Transaction
     @Query("SELECT * FROM dbdataset WHERE id == :id")
-    fun getDataSetById(id: Long) : DBDataSetWithTimeSeries?
+    fun getDataSetById(id: Long) : DBDataSetWithDataSeries?
+
+    @Transaction
+    @Query("SELECT * FROM dbDataPoint WHERE dataSeriesId == :dataSeriesId")
+    fun getDataPointsByDataSeriesId(dataSeriesId: Long) : Flow<List<DBDataPoint>>
 
     @Transaction
     @Query("SELECT * FROM dbdataset WHERE name == :name")
-    fun getDataSetsByName(name: String) : Flow<List<DBDataSetWithTimeSeries>>
+    fun getDataSetsByName(name: String) : Flow<List<DBDataSetWithDataSeries>>
 
     @Transaction
     @Query("DELETE FROM dbdataset WHERE id == :id")

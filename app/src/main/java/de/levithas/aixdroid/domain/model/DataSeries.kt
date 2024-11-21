@@ -1,5 +1,6 @@
 package de.levithas.aixdroid.domain.model
 
+import kotlinx.coroutines.flow.Flow
 import java.util.Date
 
 data class DataSeries(
@@ -7,5 +8,5 @@ data class DataSeries(
     val name: String,
     val startTime: Date,
     val unit: String,
-    val data: List<DataPoint>
+    val data: Flow<List<DataPoint>>
 )

@@ -2,11 +2,11 @@ package de.levithas.aixdroid.domain.repository
 
 import android.net.Uri
 import de.levithas.aixdroid.data.dao.ModelDataDao
-import de.levithas.aixdroid.data.model.DBModelData
-import de.levithas.aixdroid.data.model.DBModelDataInput
-import de.levithas.aixdroid.data.model.DBModelDataOutput
-import de.levithas.aixdroid.data.model.DBModelWithTensors
-import de.levithas.aixdroid.data.model.DBTensorData
+import de.levithas.aixdroid.data.model.ai.DBModelData
+import de.levithas.aixdroid.data.model.ai.DBModelDataInput
+import de.levithas.aixdroid.data.model.ai.DBModelDataOutput
+import de.levithas.aixdroid.data.model.ai.DBModelWithTensors
+import de.levithas.aixdroid.data.model.ai.DBTensorData
 import de.levithas.aixdroid.domain.model.ModelData
 import de.levithas.aixdroid.domain.model.TensorData
 import kotlinx.coroutines.flow.Flow
@@ -23,17 +23,21 @@ class ModelRepositoryImpl @Inject constructor(
         dao.insertModelData(dbModel)
         for (input in model.inputs) {
             val tensorId = dao.insertTensorData(input.toDBModel())
-            dao.insertModelDataInput(DBModelDataInput(
+            dao.insertModelDataInput(
+                DBModelDataInput(
                 uri = dbModel.uri,
                 id = tensorId
-            ))
+            )
+            )
         }
         for (output in model.outputs) {
             val tensorId = dao.insertTensorData(output.toDBModel())
-            dao.insertModelDataOutput(DBModelDataOutput(
+            dao.insertModelDataOutput(
+                DBModelDataOutput(
                 uri = dbModel.uri,
                 id = tensorId
-            ))
+            )
+            )
         }
     }
 

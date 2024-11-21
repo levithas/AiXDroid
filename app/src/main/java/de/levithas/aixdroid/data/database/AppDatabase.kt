@@ -4,15 +4,14 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import de.levithas.aixdroid.data.dao.DataSetDao
 import de.levithas.aixdroid.data.dao.ModelDataDao
-import de.levithas.aixdroid.data.model.DBDataSet
-import de.levithas.aixdroid.data.model.DBDataSetToTimeSeries
-import de.levithas.aixdroid.data.model.DBModelData
-import de.levithas.aixdroid.data.model.DBModelDataInput
-import de.levithas.aixdroid.data.model.DBModelDataOutput
-import de.levithas.aixdroid.data.model.DBTensorData
-import de.levithas.aixdroid.data.model.DBTimeSeries
-import de.levithas.aixdroid.data.model.DBTimeSeriesDataPoint
-import de.levithas.aixdroid.data.model.DBTimeSeriesToDataPoint
+import de.levithas.aixdroid.data.model.data.DBDataSet
+import de.levithas.aixdroid.data.model.data.DBDataSetToDataSeries
+import de.levithas.aixdroid.data.model.ai.DBModelData
+import de.levithas.aixdroid.data.model.ai.DBModelDataInput
+import de.levithas.aixdroid.data.model.ai.DBModelDataOutput
+import de.levithas.aixdroid.data.model.ai.DBTensorData
+import de.levithas.aixdroid.data.model.data.DBDataSeries
+import de.levithas.aixdroid.data.model.data.DBDataPoint
 
 @Database(entities = [
     DBModelData::class,
@@ -21,10 +20,9 @@ import de.levithas.aixdroid.data.model.DBTimeSeriesToDataPoint
     DBModelDataOutput::class,
 
     DBDataSet::class,
-    DBTimeSeries::class,
-    DBTimeSeriesDataPoint::class,
-    DBDataSetToTimeSeries::class,
-    DBTimeSeriesToDataPoint::class,
+    DBDataSeries::class,
+    DBDataPoint::class,
+    DBDataSetToDataSeries::class
 
                      ], version = 1)
 abstract class AppDatabase : RoomDatabase() {

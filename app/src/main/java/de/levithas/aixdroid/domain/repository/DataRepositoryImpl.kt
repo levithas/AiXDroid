@@ -1,12 +1,11 @@
 package de.levithas.aixdroid.domain.repository
 
 import de.levithas.aixdroid.data.dao.DataSetDao
-import de.levithas.aixdroid.data.model.DBDataSet
-import de.levithas.aixdroid.data.model.DBDataSetToTimeSeries
-import de.levithas.aixdroid.data.model.DBDataSetWithTimeSeries
-import de.levithas.aixdroid.data.model.DBTimeSeries
-import de.levithas.aixdroid.data.model.DBTimeSeriesDataPoint
-import de.levithas.aixdroid.data.model.DBTimeSeriesToDataPoint
+import de.levithas.aixdroid.data.model.data.DBDataSet
+import de.levithas.aixdroid.data.model.data.DBDataSetToDataSeries
+import de.levithas.aixdroid.data.model.data.DBDataSetWithDataSeries
+import de.levithas.aixdroid.data.model.data.DBDataSeries
+import de.levithas.aixdroid.data.model.data.DBDataPoint
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
@@ -30,18 +29,21 @@ class DataRepositoryImpl @Inject constructor(
         return dao.getDataSetsByName(name).map { flow -> flow.map { it.toDomainModel() }}
     }
 
+    override suspend fun getDataSeriesList(): Flow<List<DataSeries>> {
+        return dao.getAllDataSeries().map { flow -> flow.map { it.toDomainModel() } }
+    }
+
     override suspend fun addDataSet(dataSet: DataSet) : Long {
         val dbDataSetId = dao.insertDataSet(dataSet.toDBModel())
         for (column in dataSet.columns) {
-            val dbDataSeriesId = dao.insertTimeSeries(column.toDBModel())
-            for (data in column.data) {
-                val dbDataPointId = dao.insertTimeSeriesDataPoint(data.toDBModel())
-                dao.insertTimeSeriesToDataPoint(
-                    DBTimeSeriesToDataPoint(timeSeriesId = dbDataSeriesId, dataPointId = dbDataPointId)
-                )
+            val dbDataSeriesId = dao.insertDataSeries(column.toDBModel())
+            column.data.collect { flow ->
+                for (data in flow) {
+                    dao.insertDataPoint(data.toDBModel(dbDataSeriesId))
+                }
             }
-            dao.insertDataSetToTimeSeries(
-                DBDataSetToTimeSeries(dataSetId = dbDataSetId, timeSeriesId = dbDataSeriesId)
+            dao.insertDataSetToDataSeries(
+                DBDataSetToDataSeries(dataSetId = dbDataSetId, dataSeriesId = dbDataSeriesId)
             )
         }
 
@@ -61,8 +63,8 @@ class DataRepositoryImpl @Inject constructor(
         )
     }
 
-    private fun DataSeries.toDBModel() : DBTimeSeries {
-        return DBTimeSeries(
+    private fun DataSeries.toDBModel() : DBDataSeries {
+        return DBDataSeries(
             id = this.id,
             name = this.name,
             startTime = this.startTime.time,
@@ -70,31 +72,40 @@ class DataRepositoryImpl @Inject constructor(
         )
     }
 
-    private fun DataPoint.toDBModel() : DBTimeSeriesDataPoint {
-        return DBTimeSeriesDataPoint(
+    private fun DataPoint.toDBModel(dataSeriesId: Long) : DBDataPoint {
+        return DBDataPoint(
             id = this.id,
             timeTick = this.time.time,
-            value = this.value
+            value = this.value,
+            dataSeriesId = dataSeriesId
         )
     }
 
-    private fun DBDataSetWithTimeSeries.toDomainModel() : DataSet {
+    private fun DBDataSeries.toDomainModel() : DataSeries {
+        return DataSeries(
+            id = this.id,
+            name = this.name,
+            startTime = Date(this.startTime),
+            unit = this.valueUnit,
+            data = dao.getDataPointsByDataSeriesId(this.id).map { flow -> flow.map { it.toDomainModel() } }
+        )
+    }
+
+    private fun DBDataPoint.toDomainModel() : DataPoint {
+        return DataPoint(
+            id = this.id,
+            value = this.value,
+            time = Date(this.timeTick),
+        )
+    }
+
+    private fun DBDataSetWithDataSeries.toDomainModel() : DataSet {
         return DataSet(
             id = this.dataSet.id,
             description = this.dataSet.description,
             name = this.dataSet.name,
             origin = this.dataSet.origin,
-            columns = this.columns.map { column ->
-                DataSeries(
-                    id = column.timeSeries.id,
-                    name = column.timeSeries.name,
-                    startTime = Date(column.timeSeries.startTime),
-                    unit = column.timeSeries.valueUnit,
-                    data = column.data.map {
-                        DataPoint(id = it.id, value = it.value, time = Date(it.timeTick))
-                    }
-                )
-            }
+            columns = this.columns.map { it.toDomainModel() }
         )
     }
 }
