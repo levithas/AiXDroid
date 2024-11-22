@@ -15,10 +15,10 @@ import androidx.room.PrimaryKey
     ]
 )
 data class DBDataPoint(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-
     val time: Long,
     val value: Float,
 
     val dataSeriesId: Long
-)
+) {
+    @PrimaryKey(autoGenerate = true) var id: Long = 0
+}

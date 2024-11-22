@@ -1,5 +1,8 @@
 package de.levithas.aixdroid.presentation.ui.datamanager
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
@@ -26,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusModifier
@@ -49,18 +53,28 @@ fun DataManagerComposable(
 
     val dataSeriesList by viewModel.allDataSeries.collectAsState()
 
+    var modelUri by remember { mutableStateOf(Uri.EMPTY)}
+    val modelUriLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+        modelUri = it
+        if (modelUri != Uri.EMPTY) {
+            viewModel.importDataSeries(modelUri)
+            modelUri = Uri.EMPTY
+        }
+    }
+
     DataManagerWindow(
         modifier = modifier,
-        dataSeriesList = dataSeriesList
+        dataSeriesList = dataSeriesList,
+        onOpenDataImport = { modelUriLauncher.launch("text/*") }
     )
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataManagerWindow(
     modifier: Modifier,
-    dataSeriesList: List<DataSeries>
+    dataSeriesList: List<DataSeries>,
+    onOpenDataImport: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -94,7 +108,7 @@ fun DataManagerWindow(
                     disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     disabledContentColor = MaterialTheme.colorScheme.tertiary
                 ),
-                onClick = { }
+                onClick = onOpenDataImport
             ) {
                 Icon(Icons.Filled.Download , "Import" , modifier = Modifier)
             }
@@ -198,6 +212,7 @@ val dataSeriesPreviewList: List<DataSeries> = listOf(
 fun Preview() {
     AiXDroidTheme() { DataManagerWindow(
         modifier = Modifier,
-        dataSeriesList = dataSeriesPreviewList
+        dataSeriesList = dataSeriesPreviewList,
+        {}
     ) }
 }

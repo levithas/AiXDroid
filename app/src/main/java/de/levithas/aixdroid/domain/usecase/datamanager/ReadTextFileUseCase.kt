@@ -14,13 +14,9 @@ interface ReadTextFileUseCase {
 class ReadTextFileUseCaseImpl : ReadTextFileUseCase {
     override suspend fun invoke(context: Context, uri: Uri) : String? {
         try {
-            var text = ""
             val inputStream = context.contentResolver.openInputStream(uri)
-            val r = BufferedReader(InputStreamReader(inputStream))
-            r.lines().forEach { line ->
-                text.plus(line + '\n')
-            }
-            return text
+            val isr = InputStreamReader(inputStream)
+            return isr.readText()
         }
         catch (e: IOException) {
             e.message?.let { error(it) }

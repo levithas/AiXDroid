@@ -10,6 +10,8 @@ import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.single
 import java.util.Date
@@ -59,7 +61,6 @@ class DataRepositoryImpl @Inject constructor(
 
     private fun DataSet.toDBModel() : DBDataSet {
         return DBDataSet(
-            id = this.id,
             name = this.name,
             description = this.description,
             origin = this.origin,
@@ -68,7 +69,6 @@ class DataRepositoryImpl @Inject constructor(
 
     private fun DataSeries.toDBModel() : DBDataSeries {
         return DBDataSeries(
-            id = this.id,
             name = this.name,
             unit = this.unit
         )
@@ -76,7 +76,6 @@ class DataRepositoryImpl @Inject constructor(
 
     private fun DataPoint.toDBModel(dataSeriesId: Long) : DBDataPoint {
         return DBDataPoint(
-            id = this.id,
             time = this.time.time,
             value = this.value,
             dataSeriesId = dataSeriesId
@@ -84,12 +83,15 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     private suspend fun DBDataSeries.toDomainModel() : DataSeries {
-        val data = dao.getDataPointsByDataSeriesId(this.id).map { flow -> flow.map { it.toDomainModel() } }
+        val data = dao.getDataPointsByDataSeriesId(this.id)
+            .map { flow -> flow.map { it.toDomainModel() } }
+            .first()
+
         return DataSeries(
             id = this.id,
             name = this.name,
             unit = this.unit,
-            data = data.single()
+            data = data
         )
     }
 

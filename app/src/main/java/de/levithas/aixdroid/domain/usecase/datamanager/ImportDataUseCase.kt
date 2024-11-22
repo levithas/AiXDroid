@@ -25,44 +25,48 @@ class ImportDataUseCaseImpl @Inject constructor(
     override suspend fun invoke(context: Context, uri: Uri) {
         val text = readTextFileUseCase(context, uri)
         text?.let {
-            val dataSeriesList = parseCSVtoDataSeriesList(it)
+            val dataSeriesList = parseCSVtoDataSeriesList(it, ',')
             dataRepository.addDataSet(
                 DataSet(
-                    id = -1,
+                    id = null,
                     name = "Test",
-                    description = "",
-                    origin = "",
+                    description = "Platzhalter Beschreibung blablablablabla",
+                    origin = "CSV-Import",
                     columns = dataSeriesList
                 )
             )
         }
     }
 
-    private fun parseCSVtoDataSeriesList(text: String) : List<DataSeries> {
+    private fun parseCSVtoDataSeriesList(text: String, seperator: Char) : List<DataSeries> {
         // Read Headers
-        val headerList = text.substring(0, text.indexOfFirst { c -> c == '\n' }).split(";")
-        val dataRowList = text.substring(text.indexOfFirst { c -> c == '\n' }).split("\n")
+        val headerList = text.substring(0, text.indexOfFirst { c -> c == '\n' }).split(seperator)
+        val dataRowList = text.substring(text.indexOfFirst { c -> c == '\n' } + 1).split("\n")
         val dataSeriesList = mutableListOf<DataSeries>()
 
         headerList.forEachIndexed { columnIndex, title ->
             if (columnIndex > 0) {
                 val dataList : MutableList<DataPoint> = emptyList<DataPoint>().toMutableList()
                 dataRowList.forEach { row ->
-                    val values = row.split(";")
-                    dataList.add(DataPoint(
-                        id = -1,
-                        value = values[columnIndex].toFloat(),
-                        time = Date(values[0].toLong())
-                    ))
+                    val values = row.split(seperator)
+                    if (values.size > 1 && values[columnIndex].isNotBlank()) {
+                        dataList.add(DataPoint(
+                            id = null,
+                            value = values[columnIndex].toFloat(),
+                            time = Date(values[0].toLong())
+                        ))
+                    }
                 }
-                dataSeriesList.add(
-                    DataSeries(
-                    id = -1,
-                    name = title,
-                    unit = "",
-                    data = dataList
+                if (dataList.size > 0) {
+                    dataSeriesList.add(
+                        DataSeries(
+                            id = null,
+                            name = title,
+                            unit = "",
+                            data = dataList
+                        )
                     )
-                )
+                }
             }
         }
         return dataSeriesList
