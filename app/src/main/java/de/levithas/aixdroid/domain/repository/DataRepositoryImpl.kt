@@ -1,5 +1,11 @@
 package de.levithas.aixdroid.domain.repository
 
+import androidx.lifecycle.LiveData
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.map
 import de.levithas.aixdroid.data.dao.DataSetDao
 import de.levithas.aixdroid.data.model.data.DBDataSet
 import de.levithas.aixdroid.data.model.data.DBDataSetToDataSeries
@@ -10,17 +16,15 @@ import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.single
 import java.util.Date
 import javax.inject.Inject
 
 class DataRepositoryImpl @Inject constructor(
     private val dao: DataSetDao
 ) : DataRepository {
-    override suspend fun getDataSetList(): Flow<List<DataSet>> {
+    override suspend fun getAllDataSets(): Flow<List<DataSet>> {
         return dao.getAllDataSets().map { flow -> flow.map { it.toDomainModel() } }
     }
 
@@ -32,23 +36,58 @@ class DataRepositoryImpl @Inject constructor(
         return dao.getDataSetsByName(name).map { flow -> flow.map { it.toDomainModel() }}
     }
 
-    override suspend fun getDataSeriesList(): Flow<List<DataSeries>> {
+    override suspend fun getAllDataSeries(): Flow<List<DataSeries>> {
         return dao.getAllDataSeries().map { flow -> flow.map { it.toDomainModel() } }
     }
 
     override suspend fun addDataSet(dataSet: DataSet) : Long {
-        val dbDataSetId = dao.insertDataSet(dataSet.toDBModel())
-        for (column in dataSet.columns) {
-            val dbDataSeriesId = dao.insertDataSeries(column.toDBModel())
-            column.data.forEach { data ->
-                dao.insertDataPoint(data.toDBModel(dbDataSeriesId))
+        val dataSetId = dao.insertDataSet(dataSet.toDBModel())
+        if (dataSet.columns.isNotEmpty()) {
+            dataSet.columns.forEach { dataSeries ->
+                dataSeries.id?.let { dao.insertDataSetToDataSeries(DBDataSetToDataSeries(dataSetId = dataSetId, dataSeriesId = it)) }
+                // TODO: Serie hinzufügen, wenn keine ID gegeben ist?
             }
-            dao.insertDataSetToDataSeries(
-                DBDataSetToDataSeries(dataSetId = dbDataSetId, dataSeriesId = dbDataSeriesId)
-            )
         }
+        return dataSetId
+    }
 
-        return dbDataSetId
+    override suspend fun addDataSeries(dataSeries: DataSeries): Long {
+        return dao.insertDataSeries(dataSeries.toDBModel())
+    }
+
+    override suspend fun addDataPoints(dataPointList: List<DataPoint>, dataSeriesId: Long): List<Long> {
+        // TODO: Check if dataSeriesId exists
+        return dataPointList.map { dataPoint ->
+            dao.insertDataPoint(dataPoint.toDBModel(dataSeriesId))
+        }
+    }
+
+    override suspend fun getDataPointsByDataSeriesId(id: Long) : Flow<PagingData<DataPoint>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = { dao.getDataPointsByDataSeriesId(id) }
+        ).flow.map { pagingData ->
+            pagingData.map { dbDataPoint -> dbDataPoint.toDomainModel() }
+        }
+    }
+
+    override suspend fun getDataPointCountByDataSeriesId(id: Long): Long {
+        return dao.getDataPointCountByDataSeriesId(id)
+    }
+
+    override suspend fun getDataPointMaxTimeByDataSeriesId(id: Long): Long {
+        return dao.getDataPointMaxTimeByDataSeriesId(id)
+    }
+
+    override suspend fun getDataPointMinTimeByDataSeriesId(id: Long): Long {
+        return dao.getDataPointMinTimeByDataSeriesId(id)
+    }
+
+    override suspend fun updateDataSeries(dataSeries: DataSeries): Int {
+        return dao.updateDataSeries(dataSeries.toDBModel())
     }
 
     override suspend fun deleteDataSeries(id: Long) {
@@ -60,18 +99,25 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     private fun DataSet.toDBModel() : DBDataSet {
-        return DBDataSet(
+        val dbObject = DBDataSet(
             name = this.name,
             description = this.description,
             origin = this.origin,
         )
+        this.id?.let { dbObject.id = it }
+        return dbObject
     }
 
     private fun DataSeries.toDBModel() : DBDataSeries {
-        return DBDataSeries(
+        val dbObject =  DBDataSeries(
             name = this.name,
-            unit = this.unit
+            unit = this.unit,
+            count = this.count?:0,
+            startTime = this.startTime?.time,
+            endTime = this.endTime?.time
         )
+        this.id?.let { dbObject.id = it }
+        return dbObject
     }
 
     private fun DataPoint.toDBModel(dataSeriesId: Long) : DBDataPoint {
@@ -83,15 +129,13 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     private suspend fun DBDataSeries.toDomainModel() : DataSeries {
-        val data = dao.getDataPointsByDataSeriesId(this.id)
-            .map { flow -> flow.map { it.toDomainModel() } }
-            .first()
-
         return DataSeries(
             id = this.id,
             name = this.name,
             unit = this.unit,
-            data = data
+            count = dao.getDataPointCountByDataSeriesId(this.id),
+            startTime = Date(dao.getDataPointMinTimeByDataSeriesId(this.id)),
+            endTime = Date(dao.getDataPointMaxTimeByDataSeriesId(this.id))
         )
     }
 

@@ -3,7 +3,7 @@ package de.levithas.aixdroid.domain.model
 import java.util.Date
 
 data class DataPoint(
-    val id: Long?,
+    var id: Long?,
     val value: Float,
-    val time: Date
+    val time: Date,
 )

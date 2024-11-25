@@ -13,6 +13,6 @@ class GetDataSeriesListUseCaseImpl @Inject constructor(
     private val repository : DataRepository
 ) : GetDataSeriesListUseCase {
     override suspend fun invoke(): Flow<List<DataSeries>> {
-        return repository.getDataSeriesList()
+        return repository.getAllDataSeries()
     }
 }

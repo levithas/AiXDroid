@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,7 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,6 +39,8 @@ import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.count
 import java.util.Date
 
 
@@ -159,51 +158,30 @@ fun DataSeriesItem(
             Text(
                 modifier = Modifier,
                 style = MaterialTheme.typography.bodyMedium,
-                text = "Datapoint Count: " + dataSeriesItem.data.size
+                text = "Datapoint Count: " + dataSeriesItem.count
             )
         }
     }
 }
+
+
 
 val dataSeriesPreviewList: List<DataSeries> = listOf(
     DataSeries(
         id = 0,
         name = "Test",
         unit = "m",
-        data = listOf(
-            DataPoint(
-                id = 0,
-                value = 1.0f,
-                time = Date(0)
-            ),
-            DataPoint(
-                id = 1,
-                value = 0.2523423f,
-                time = Date(100)
-            ),
-            DataPoint(
-                id = 2,
-                value = 1.5f,
-                time = Date(250)
-            )
-        )
+        count = 1110010,
+        startTime = Date(10203404),
+        endTime = Date(102034545)
     ),
     DataSeries(
         id = 1,
         name = "Test",
         unit = "m",
-        data = listOf(
-            DataPoint(
-                id = 4,
-                value = 0.2523423f,
-                time = Date(100)
-            ),
-            DataPoint(
-                id = 5,
-                value = 1.5f,
-                time = Date(250)
-            )
-        )
+        count = 1005220,
+        startTime = Date(10203404),
+        endTime = Date(16203404),
     )
 )
 

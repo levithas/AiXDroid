@@ -14,18 +14,11 @@ import de.levithas.aixdroid.domain.usecase.datamanager.GetDataSeriesListUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.GetDataSeriesListUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.datamanager.ImportDataUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.ImportDataUseCaseImpl
-import de.levithas.aixdroid.domain.usecase.datamanager.ReadTextFileUseCase
-import de.levithas.aixdroid.domain.usecase.datamanager.ReadTextFileUseCaseImpl
 
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DataManagerUseCaseModule {
-
-    @Provides
-    fun provideReadTextFileUseCase(): ReadTextFileUseCase {
-        return ReadTextFileUseCaseImpl()
-    }
 
     @Provides
     fun provideGetDataSeriesListUseCase(
@@ -39,8 +32,7 @@ object DataManagerUseCaseModule {
          repository: DataRepository
      ) : ImportDataUseCase {
          return ImportDataUseCaseImpl(
-             repository,
-             provideReadTextFileUseCase()
+             repository
          )
      }
 

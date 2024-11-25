@@ -11,8 +11,6 @@ import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelListUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelListUseCaseImpl
-import de.levithas.aixdroid.domain.usecase.datamanager.ReadTextFileUseCase
-import de.levithas.aixdroid.domain.usecase.datamanager.ReadTextFileUseCaseImpl
 
 
 @Module
