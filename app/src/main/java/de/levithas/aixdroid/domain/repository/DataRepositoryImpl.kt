@@ -119,6 +119,7 @@ class DataRepositoryImpl @Inject constructor(
     private fun DataSeries.toDBModel() : DBDataSeries {
         val dbObject =  DBDataSeries(
             name = this.name,
+            origin = this.origin,
             unit = this.unit,
             count = this.count?:0,
             startTime = this.startTime?.time,
@@ -139,6 +140,7 @@ class DataRepositoryImpl @Inject constructor(
     private suspend fun DBDataSeries.toDomainModel() : DataSeries {
         return DataSeries(
             id = this.id,
+            origin = this.origin,
             name = this.name,
             unit = this.unit,
             count = dao.getDataPointCountByDataSeriesId(this.id),

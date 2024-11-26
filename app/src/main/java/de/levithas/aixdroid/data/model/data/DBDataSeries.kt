@@ -8,6 +8,7 @@ import java.util.Date
 @Entity
 data class DBDataSeries(
     val name: String,
+    val origin: String,
     val unit: String,
     var count: Long = 0,
     var startTime: Long?,

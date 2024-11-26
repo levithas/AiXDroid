@@ -149,7 +149,8 @@ class ImportDataUseCaseImpl @Inject constructor(
                 unit = "",
                 count = null,
                 startTime = null,
-                endTime = null
+                endTime = null,
+                origin = "CSV-Import",
             )
         }
     }

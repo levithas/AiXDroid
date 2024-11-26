@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "d4bee68cc7f8aeadd304bb3b2c539e4c",
+    "identityHash": "cc1b6a6cd87e6daa274051f68f8c6639",
     "entities": [
       {
         "tableName": "model_data",
@@ -250,11 +250,17 @@
       },
       {
         "tableName": "DBDataSeries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `unit` TEXT NOT NULL, `count` INTEGER NOT NULL, `startTime` INTEGER, `endTime` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `origin` TEXT NOT NULL, `unit` TEXT NOT NULL, `count` INTEGER NOT NULL, `startTime` INTEGER, `endTime` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
         "fields": [
           {
             "fieldPath": "name",
             "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -397,7 +403,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd4bee68cc7f8aeadd304bb3b2c539e4c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cc1b6a6cd87e6daa274051f68f8c6639')"
     ]
   }
 }
