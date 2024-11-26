@@ -43,6 +43,14 @@ interface DataSetDao {
     fun getAllDataSeries(): Flow<List<DBDataSeries>>
 
     @Transaction
+    @Query("SELECT * FROM DBDataSeries")
+    fun getAllDataSeriesNoFlow(): List<DBDataSeries>
+
+    @Transaction
+    @Query("SELECT * FROM DBDATASERIES WHERE name == :name")
+    fun getAllDataSeriesWithName(name: String): List<DBDataSeries>
+
+    @Transaction
     @Query("SELECT * FROM dbdataset WHERE id == :id")
     fun getDataSetById(id: Long) : DBDataSetWithDataSeries?
 

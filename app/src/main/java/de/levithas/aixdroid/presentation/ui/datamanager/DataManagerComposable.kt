@@ -31,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,7 @@ import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
+import de.levithas.aixdroid.presentation.ui.datamanager.dialog.DataManagerDialogComposable
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.count
 import java.util.Date
@@ -61,10 +63,12 @@ fun DataManagerComposable(
 
     var fileUri by remember { mutableStateOf(Uri.EMPTY)}
 
+    val importDataMergeDecision by viewModel.importDataMergeDecision.collectAsState()
+
     val modelUriLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
         fileUri = it
         if (fileUri != Uri.EMPTY) {
-            viewModel.importDataSeries(fileUri)
+            viewModel.startDataSeriesImport(fileUri)
             fileUri = Uri.EMPTY
         }
     }
@@ -77,6 +81,21 @@ fun DataManagerComposable(
         dataImportState = importingState, // State of loading bar
         onCancelImport = { viewModel.cancelDataImport() }
     )
+
+    if (importDataMergeDecision == ImportDataMergeDecision.ON_REQUEST) {
+        DataManagerDialogComposable(
+            modifier = Modifier,
+            onDismiss = {
+                viewModel.dataImportDecision(ImportDataMergeDecision.NO_MERGE)
+            },
+            onAccepted = {
+                viewModel.dataImportDecision(ImportDataMergeDecision.MERGE)
+            },
+            dismissButtonText = "Abort",
+            acceptButtonText = "Merge",
+            message = "There are features with the same name as the new imported ones. Do you want to merge the data?"
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,6 +108,8 @@ fun DataManagerWindow(
     dataImportState: Float,
     onCancelImport: () -> Unit
 ) {
+
+
     Scaffold(
         topBar = {
             TopAppBar(

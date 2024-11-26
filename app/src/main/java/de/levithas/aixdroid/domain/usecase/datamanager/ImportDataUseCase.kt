@@ -2,12 +2,17 @@ package de.levithas.aixdroid.domain.usecase.datamanager
 
 import android.content.Context
 import android.net.Uri
+import androidx.compose.runtime.collectAsState
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import de.levithas.aixdroid.domain.repository.DataRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
@@ -18,6 +23,7 @@ import javax.inject.Inject
 
 interface ImportDataUseCase {
     suspend operator fun invoke(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit)
+    suspend fun checkExistingDataSeriesNames(context: Context, uri: Uri) : Boolean
 }
 
 class ImportDataUseCaseImpl @Inject constructor(
@@ -26,6 +32,8 @@ class ImportDataUseCaseImpl @Inject constructor(
 
     private val maxElementsPerCreation = 250
     private val separatorSign = ','
+
+    private var existingDataSeriesNameMap = emptyMap<String, DataSeries>()
 
     override suspend fun invoke(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit) {
         try {
@@ -46,10 +54,21 @@ class ImportDataUseCaseImpl @Inject constructor(
                     byteCount += line.toByteArray().size
 
                     if (lineCount == 0L) {
+                        if (existingDataSeriesNameMap.isEmpty()) {
+                            existingDataSeriesNameMap = dataRepository.getAllDataSeriesNoFlow().associateBy { it.name }
+                        }
+
                         dataSeriesList = parseCSVHeaderToDataSeries(line, separatorSign)
-                        val idList = dataRepository.addDataSeries(dataSeriesList)
+
                         dataSeriesList.forEachIndexed { index, dataSeries ->
-                            dataSeries.id = idList[index]
+                            val existingDataSeries = existingDataSeriesNameMap[dataSeries.name]
+                            if (existingDataSeries != null) {
+                                dataSeries.id = existingDataSeries.id
+                            }
+
+                            if (dataSeries.id == null) {
+                                dataSeries.id = dataRepository.addDataSeries(listOf(dataSeries))[0]
+                            }
                             dataPointListList.add(mutableListOf())
                         }
                     } else {
@@ -57,7 +76,6 @@ class ImportDataUseCaseImpl @Inject constructor(
                         dataList.forEachIndexed { index, element ->
                             dataPointListList[index].add(
                                 DataPoint(
-                                    id = null,
                                     value = element.value,
                                     time = element.time
                                 )
@@ -101,6 +119,25 @@ class ImportDataUseCaseImpl @Inject constructor(
         } catch (e: IOException) {
             e.message?.let { error(it) }
         }
+        finally {
+            existingDataSeriesNameMap = emptyMap()
+        }
+    }
+
+    override suspend fun checkExistingDataSeriesNames(context: Context, uri: Uri): Boolean {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val inputStreamReader = InputStreamReader(inputStream)
+        val bufferedReader = BufferedReader(inputStreamReader)
+        val result: Boolean
+
+        withContext(Dispatchers.IO) {
+            val line = bufferedReader.readLine()
+            val dataSeriesList = parseCSVHeaderToDataSeries(line, separatorSign)
+            existingDataSeriesNameMap = dataRepository.getAllDataSeriesNoFlow().associateBy { it.name }
+            result = dataSeriesList.any { existingDataSeriesNameMap[it.name] != null }
+        }
+
+        return result
     }
 
     private fun parseCSVHeaderToDataSeries(line: String, separator: Char) : List<DataSeries> {
@@ -121,7 +158,6 @@ class ImportDataUseCaseImpl @Inject constructor(
         val values = line.split(separator)
         val pointList = mutableListOf<DataPoint>()
         values.forEachIndexed { index, s -> if (index > 0) { pointList.add(DataPoint(
-            id = null,
             value = s.toFloat(),
             time = Date(values[0].toLong())
         )) } }

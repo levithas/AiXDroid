@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
 @Entity(
+    primaryKeys = ["time", "dataSeriesId"],
     foreignKeys = [
         ForeignKey(
             entity = DBDataSeries::class,
@@ -16,9 +17,7 @@ import androidx.room.PrimaryKey
 )
 data class DBDataPoint(
     val time: Long,
-    val value: Float,
+    val dataSeriesId: Long,
 
-    val dataSeriesId: Long
-) {
-    @PrimaryKey(autoGenerate = true) var id: Long = 0
-}
+    val value: Float
+)

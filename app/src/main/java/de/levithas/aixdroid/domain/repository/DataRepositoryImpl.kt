@@ -40,6 +40,14 @@ class DataRepositoryImpl @Inject constructor(
         return dao.getAllDataSeries().map { flow -> flow.map { it.toDomainModel() } }
     }
 
+    override suspend fun getAllDataSeriesNoFlow(): List<DataSeries> {
+        return dao.getAllDataSeriesNoFlow().map { it.toDomainModel() }
+    }
+
+    override suspend fun getAllDataSeriesWithName(name: String): List<DataSeries> {
+        return dao.getAllDataSeriesWithName(name).map { it.toDomainModel() }
+    }
+
     override suspend fun addDataSet(dataSet: DataSet) : Long {
         val dataSetId = dao.insertDataSet(dataSet.toDBModel())
         if (dataSet.columns.isNotEmpty()) {
@@ -141,9 +149,8 @@ class DataRepositoryImpl @Inject constructor(
 
     private fun DBDataPoint.toDomainModel() : DataPoint {
         return DataPoint(
-            id = this.id,
             value = this.value,
-            time = Date(this.time),
+            time = Date(this.time)
         )
     }
 

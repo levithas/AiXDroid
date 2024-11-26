@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.Flow
 interface DataRepository {
     suspend fun getAllDataSets(): Flow<List<DataSet>>
     suspend fun getAllDataSeries(): Flow<List<DataSeries>>
+    suspend fun getAllDataSeriesNoFlow(): List<DataSeries>
+    suspend fun getAllDataSeriesWithName(name: String): List<DataSeries>
     suspend fun getDataSet(id: Long) : DataSet?
     suspend fun getDataSetsByName(name: String) : Flow<List<DataSet>>
     suspend fun getDataPointsByDataSeriesId(id: Long) : Flow<PagingData<DataPoint>>

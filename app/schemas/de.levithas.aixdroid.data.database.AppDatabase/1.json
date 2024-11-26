@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "9d9a41924a5980a427dd0f787cad04d5",
+    "identityHash": "d4bee68cc7f8aeadd304bb3b2c539e4c",
     "entities": [
       {
         "tableName": "model_data",
@@ -212,14 +212,8 @@
       },
       {
         "tableName": "DBDataSet",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `origin` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `origin` TEXT NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
         "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
           {
             "fieldPath": "name",
             "columnName": "name",
@@ -237,6 +231,12 @@
             "columnName": "origin",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -249,15 +249,9 @@
         "foreignKeys": []
       },
       {
-        "tableName": "DBTimeSeries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `startTime` INTEGER NOT NULL, `valueUnit` TEXT NOT NULL, `dataSetId` INTEGER NOT NULL, FOREIGN KEY(`dataSetId`) REFERENCES `DBDataSet`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "tableName": "DBDataSeries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `unit` TEXT NOT NULL, `count` INTEGER NOT NULL, `startTime` INTEGER, `endTime` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
         "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
           {
             "fieldPath": "name",
             "columnName": "name",
@@ -265,20 +259,32 @@
             "notNull": true
           },
           {
-            "fieldPath": "startTime",
-            "columnName": "startTime",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "valueUnit",
-            "columnName": "valueUnit",
+            "fieldPath": "unit",
+            "columnName": "unit",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "dataSetId",
-            "columnName": "dataSetId",
+            "fieldPath": "count",
+            "columnName": "count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "endTime",
+            "columnName": "endTime",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -290,33 +296,21 @@
           ]
         },
         "indices": [],
-        "foreignKeys": [
-          {
-            "table": "DBDataSet",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "dataSetId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
+        "foreignKeys": []
       },
       {
-        "tableName": "DBTimeSeriesDataPoint",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timeTick` INTEGER NOT NULL, `value` REAL NOT NULL, `dataSeriesId` INTEGER NOT NULL, FOREIGN KEY(`dataSeriesId`) REFERENCES `DBTimeSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "tableName": "DBDataPoint",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`time` INTEGER NOT NULL, `dataSeriesId` INTEGER NOT NULL, `value` REAL NOT NULL, PRIMARY KEY(`time`, `dataSeriesId`), FOREIGN KEY(`dataSeriesId`) REFERENCES `DBDataSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
-            "fieldPath": "id",
-            "columnName": "id",
+            "fieldPath": "time",
+            "columnName": "time",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "timeTick",
-            "columnName": "timeTick",
+            "fieldPath": "dataSeriesId",
+            "columnName": "dataSeriesId",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -325,24 +319,19 @@
             "columnName": "value",
             "affinity": "REAL",
             "notNull": true
-          },
-          {
-            "fieldPath": "dataSeriesId",
-            "columnName": "dataSeriesId",
-            "affinity": "INTEGER",
-            "notNull": true
           }
         ],
         "primaryKey": {
-          "autoGenerate": true,
+          "autoGenerate": false,
           "columnNames": [
-            "id"
+            "time",
+            "dataSeriesId"
           ]
         },
         "indices": [],
         "foreignKeys": [
           {
-            "table": "DBTimeSeries",
+            "table": "DBDataSeries",
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
@@ -355,8 +344,8 @@
         ]
       },
       {
-        "tableName": "DBDataSetToTimeSeries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataSetId` INTEGER NOT NULL, `timeSeriesId` INTEGER NOT NULL, PRIMARY KEY(`dataSetId`, `timeSeriesId`), FOREIGN KEY(`dataSetId`) REFERENCES `DBDataSet`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`timeSeriesId`) REFERENCES `DBTimeSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "tableName": "DBDataSetToDataSeries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataSetId` INTEGER NOT NULL, `dataSeriesId` INTEGER NOT NULL, PRIMARY KEY(`dataSetId`, `dataSeriesId`), FOREIGN KEY(`dataSetId`) REFERENCES `DBDataSet`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`dataSeriesId`) REFERENCES `DBDataSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "dataSetId",
@@ -365,8 +354,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "timeSeriesId",
-            "columnName": "timeSeriesId",
+            "fieldPath": "dataSeriesId",
+            "columnName": "dataSeriesId",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -375,7 +364,7 @@
           "autoGenerate": false,
           "columnNames": [
             "dataSetId",
-            "timeSeriesId"
+            "dataSeriesId"
           ]
         },
         "indices": [],
@@ -392,61 +381,11 @@
             ]
           },
           {
-            "table": "DBTimeSeries",
+            "table": "DBDataSeries",
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
-              "timeSeriesId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
-      },
-      {
-        "tableName": "DBTimeSeriesToDataPoint",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timeSeriesId` INTEGER NOT NULL, `dataPointId` INTEGER NOT NULL, PRIMARY KEY(`timeSeriesId`, `dataPointId`), FOREIGN KEY(`timeSeriesId`) REFERENCES `DBTimeSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`dataPointId`) REFERENCES `DBTimeSeriesDataPoint`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        "fields": [
-          {
-            "fieldPath": "timeSeriesId",
-            "columnName": "timeSeriesId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "dataPointId",
-            "columnName": "dataPointId",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "timeSeriesId",
-            "dataPointId"
-          ]
-        },
-        "indices": [],
-        "foreignKeys": [
-          {
-            "table": "DBTimeSeries",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "timeSeriesId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
-          {
-            "table": "DBTimeSeriesDataPoint",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "dataPointId"
+              "dataSeriesId"
             ],
             "referencedColumns": [
               "id"
@@ -458,7 +397,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9d9a41924a5980a427dd0f787cad04d5')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd4bee68cc7f8aeadd304bb3b2c539e4c')"
     ]
   }
 }
