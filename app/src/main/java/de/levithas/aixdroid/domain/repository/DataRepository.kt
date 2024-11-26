@@ -17,7 +17,7 @@ interface DataRepository {
     suspend fun getDataPointMaxTimeByDataSeriesId(id: Long): Long
     suspend fun getDataPointMinTimeByDataSeriesId(id: Long): Long
     suspend fun addDataSet(dataSet: DataSet) : Long
-    suspend fun addDataSeries(dataSeries: DataSeries) : Long
+    suspend fun addDataSeries(dataSeries: List<DataSeries>) : List<Long>
     suspend fun addDataPoints(dataPointList: List<DataPoint>, dataSeriesId: Long) : List<Long>
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
     suspend fun deleteDataSeries(id: Long)

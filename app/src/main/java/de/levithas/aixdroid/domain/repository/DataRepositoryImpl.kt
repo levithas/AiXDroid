@@ -51,8 +51,8 @@ class DataRepositoryImpl @Inject constructor(
         return dataSetId
     }
 
-    override suspend fun addDataSeries(dataSeries: DataSeries): Long {
-        return dao.insertDataSeries(dataSeries.toDBModel())
+    override suspend fun addDataSeries(dataSeries: List<DataSeries>): List<Long> {
+        return dataSeries.map { dao.insertDataSeries(it.toDBModel()) }
     }
 
     override suspend fun addDataPoints(dataPointList: List<DataPoint>, dataSeriesId: Long): List<Long> {

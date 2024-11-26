@@ -7,15 +7,17 @@ import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import de.levithas.aixdroid.domain.repository.DataRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.util.Date
 import javax.inject.Inject
 
 interface ImportDataUseCase {
-    suspend operator fun invoke(context: Context, uri: Uri)
+    suspend operator fun invoke(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit)
 }
 
 class ImportDataUseCaseImpl @Inject constructor(
@@ -25,62 +27,66 @@ class ImportDataUseCaseImpl @Inject constructor(
     private val maxElementsPerCreation = 250
     private val separatorSign = ','
 
-    override suspend fun invoke(context: Context, uri: Uri) {
+    override suspend fun invoke(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit) {
         try {
             val inputStream = context.contentResolver.openInputStream(uri)
             val inputStreamReader = InputStreamReader(inputStream)
+            val bufferedReader = BufferedReader(inputStreamReader)
 
-            var lineCount = 0
-            var columnList : List<DataSeries> = emptyList()
+            val fileSize = context.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize }
+            var byteCount = 0L
+            var lineCount = 0L
+            var dataSeriesList : List<DataSeries> = emptyList()
             val dataPointListList = mutableListOf<MutableList<DataPoint>>()
 
-            inputStreamReader.forEachLine { line ->
-                if (lineCount == 0) {
-                    columnList = parseCSVHeaderToDataSeries(line, separatorSign)
-                    runBlocking {
-                        withContext(Dispatchers.IO) {
-                            // Index = 0 is time which will be inserted into the datapoint
-                            columnList.forEachIndexed { index, dataSeries ->
-                                dataPointListList.add(mutableListOf())
-                                // Initial creation of dataSeries for referencing dataPoints
-                                columnList[index].id = dataRepository.addDataSeries(dataSeries)
-                            }
+            withContext(Dispatchers.IO) {
+                do {
+                    coroutineContext.ensureActive()
+                    val line = bufferedReader.readLine()
+                    byteCount += line.toByteArray().size
+
+                    if (lineCount == 0L) {
+                        dataSeriesList = parseCSVHeaderToDataSeries(line, separatorSign)
+                        val idList = dataRepository.addDataSeries(dataSeriesList)
+                        dataSeriesList.forEachIndexed { index, dataSeries ->
+                            dataSeries.id = idList[index]
+                            dataPointListList.add(mutableListOf())
                         }
-                    }
-                } else {
-                    val dataList = parseCSVLineToDataPoints(line, ',')
-                    dataList.forEachIndexed { index, element ->
-                        dataPointListList[index].add(
-                            DataPoint(
-                                id = null,
-                                value = element.value,
-                                time = element.time
+                    } else {
+                        val dataList = parseCSVLineToDataPoints(line, ',')
+                        dataList.forEachIndexed { index, element ->
+                            dataPointListList[index].add(
+                                DataPoint(
+                                    id = null,
+                                    value = element.value,
+                                    time = element.time
+                                )
                             )
-                        )
-                    }
+                        }
 
-                    if (dataPointListList.any { it.count() >= maxElementsPerCreation } ) {
-                        runBlocking {
-                            withContext(Dispatchers.IO) {
-                                dataPointListList.forEachIndexed { index, column ->
-                                    if (column.isNotEmpty()) {
-                                        columnList[index].id?.let { it1 -> dataRepository.addDataPoints(column, it1) }
-                                    }
-                                }
-
-                                columnList.forEach { dataSeries ->
-                                    dataSeries.count = dataSeries.id?.let { dataRepository.getDataPointCountByDataSeriesId(it) }
-                                    dataSeries.startTime = dataSeries.id?.let { Date(dataRepository.getDataPointMinTimeByDataSeriesId(it)) }
-                                    dataSeries.endTime = dataSeries.id?.let { Date(dataRepository.getDataPointMaxTimeByDataSeriesId(it)) }
-                                    // Replace the old dataSeries with new dataSeries
-                                    dataRepository.updateDataSeries(dataSeries)
+                        if (dataPointListList.any { it.count() >= maxElementsPerCreation } ) {
+                            // Import Datapoints
+                            dataPointListList.forEachIndexed { index, column ->
+                                if (column.isNotEmpty()) {
+                                    dataSeriesList[index].id?.let { it1 -> dataRepository.addDataPoints(column, it1) }
                                 }
                             }
+
+                            // Update Metadata for DataSeries
+                            dataSeriesList.forEach { dataSeries ->
+                                dataSeries.count = dataSeries.id?.let { dataRepository.getDataPointCountByDataSeriesId(it) }
+                                dataSeries.startTime = dataSeries.id?.let { Date(dataRepository.getDataPointMinTimeByDataSeriesId(it)) }
+                                dataSeries.endTime = dataSeries.id?.let { Date(dataRepository.getDataPointMaxTimeByDataSeriesId(it)) }
+                                // Replace the old dataSeries with new dataSeries
+                                dataRepository.updateDataSeries(dataSeries)
+                            }
+                            dataPointListList.forEach { table -> table.clear() }
                         }
-                        dataPointListList.forEach { table -> table.clear() }
                     }
-                }
-                lineCount++
+
+                    lineCount++
+                    fileSize?.let { onProgressUpdate(byteCount / it.toFloat()) }
+                } while (line != null)
             }
 
             dataRepository.addDataSet(
@@ -89,7 +95,7 @@ class ImportDataUseCaseImpl @Inject constructor(
                     name = "Test",
                     description = "Platzhalter Beschreibung blablablablabla",
                     origin = "CSV-Import",
-                    columns = columnList
+                    columns = dataSeriesList
                 )
             )
         } catch (e: IOException) {

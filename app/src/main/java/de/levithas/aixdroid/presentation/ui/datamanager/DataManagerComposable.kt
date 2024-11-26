@@ -1,10 +1,12 @@
 package de.levithas.aixdroid.presentation.ui.datamanager
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.opticalCentering
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import de.levithas.aixdroid.R
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
@@ -42,6 +47,7 @@ import de.levithas.aixdroid.presentation.theme.customColors
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.count
 import java.util.Date
+import java.util.Locale
 
 
 @Composable
@@ -49,22 +55,27 @@ fun DataManagerComposable(
     modifier: Modifier = Modifier,
     viewModel: DataViewModel = hiltViewModel()
 ) {
-
     val dataSeriesList by viewModel.allDataSeries.collectAsState()
+    val isImportingData by viewModel.isImporting.collectAsState()
+    val importingState by viewModel.importProgress.collectAsState()
 
-    var modelUri by remember { mutableStateOf(Uri.EMPTY)}
+    var fileUri by remember { mutableStateOf(Uri.EMPTY)}
+
     val modelUriLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
-        modelUri = it
-        if (modelUri != Uri.EMPTY) {
-            viewModel.importDataSeries(modelUri)
-            modelUri = Uri.EMPTY
+        fileUri = it
+        if (fileUri != Uri.EMPTY) {
+            viewModel.importDataSeries(fileUri)
+            fileUri = Uri.EMPTY
         }
     }
 
     DataManagerWindow(
         modifier = modifier,
         dataSeriesList = dataSeriesList,
-        onOpenDataImport = { modelUriLauncher.launch("text/*") }
+        onOpenDataImport = { modelUriLauncher.launch("text/*") },
+        isImportingData = isImportingData, // Shows loading bar
+        dataImportState = importingState, // State of loading bar
+        onCancelImport = { viewModel.cancelDataImport() }
     )
 }
 
@@ -73,7 +84,10 @@ fun DataManagerComposable(
 fun DataManagerWindow(
     modifier: Modifier,
     dataSeriesList: List<DataSeries>,
-    onOpenDataImport: () -> Unit
+    onOpenDataImport: () -> Unit,
+    isImportingData: Boolean,
+    dataImportState: Float,
+    onCancelImport: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -84,12 +98,23 @@ fun DataManagerWindow(
         }
     ) { paddingValues ->
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
+            if (isImportingData) {
+                DataSeriesImportLoading(
+                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 32.dp),
+                    loadingState = dataImportState,
+                    onCancelImport = onCancelImport
+                )
+            }
+
+
             Text("Willkommen im Data Manager!")
+
+
 
             DataSeriesOverview(
                 modifier = Modifier.weight(1f),
@@ -164,7 +189,32 @@ fun DataSeriesItem(
     }
 }
 
-
+@Composable
+fun DataSeriesImportLoading(
+    modifier: Modifier,
+    loadingState: Float,
+    onCancelImport: () -> Unit
+) {
+    Card(
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                modifier = Modifier.padding(8.dp),
+                text = "Data importing..." + String.format(locale = Locale.GERMAN,"%.2f", loadingState) + "%"
+            )
+            Button(
+                onClick = onCancelImport
+            ) {
+                Text("Cancel")
+            }
+        }
+    }
+}
 
 val dataSeriesPreviewList: List<DataSeries> = listOf(
     DataSeries(
@@ -191,6 +241,9 @@ fun Preview() {
     AiXDroidTheme() { DataManagerWindow(
         modifier = Modifier,
         dataSeriesList = dataSeriesPreviewList,
+        {},
+        true,
+        0.0f,
         {}
     ) }
 }
