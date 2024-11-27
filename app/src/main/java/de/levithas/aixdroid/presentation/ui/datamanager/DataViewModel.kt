@@ -8,8 +8,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.domain.model.DataSeries
+import de.levithas.aixdroid.domain.model.DataSet
 import de.levithas.aixdroid.domain.usecase.datamanager.DeleteDataSeriesUseCase
-import de.levithas.aixdroid.domain.usecase.datamanager.GetDataSeriesListUseCase
+import de.levithas.aixdroid.domain.usecase.datamanager.GetDataListsUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.ImportDataUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -34,13 +35,18 @@ enum class ImportDataMergeDecision {
 @HiltViewModel
 class DataViewModel @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
-    private val getDataSeriesListUseCase: GetDataSeriesListUseCase,
+    private val getDataListsUseCase: GetDataListsUseCase,
     private val importDataUseCase: ImportDataUseCase,
     private val deleteDataSeriesUseCase: DeleteDataSeriesUseCase
-    ) : ViewModel() {
+) : ViewModel() {
+
+    private val _allDataSets = MutableStateFlow<List<DataSet>>(emptyList())
+    val allDataSets: StateFlow<List<DataSet>> get() = _allDataSets
 
     private val _allDataSeries = MutableStateFlow<List<DataSeries>>(emptyList())
     val allDataSeries: StateFlow<List<DataSeries>> get() = _allDataSeries
+
+
 
     private val _isImporting = MutableStateFlow(false)
     val isImporting: StateFlow<Boolean> get() = _isImporting
@@ -55,13 +61,16 @@ class DataViewModel @Inject constructor(
     private var importJob: Job? = null
 
     init {
-        fetchAllDataSeries()
+        fetchAllData()
     }
 
-    private fun fetchAllDataSeries() {
+    private fun fetchAllData() {
         viewModelScope.launch(Dispatchers.IO) {
-            getDataSeriesListUseCase.invoke().collect { list ->
+            getDataListsUseCase.getDataSeriesFlow().collect { list ->
                 _allDataSeries.value = list
+            }
+            getDataListsUseCase.getDataSetsFlow().collect { list ->
+                _allDataSets.value = list
             }
         }
     }
@@ -77,14 +86,17 @@ class DataViewModel @Inject constructor(
 
             try {
                 if (importDataUseCase.checkExistingDataSeriesNames(applicationContext, uri)) {
-                   _importDataMergeDecision.value = ImportDataMergeDecision.ON_REQUEST
+                    _importDataMergeDecision.value = ImportDataMergeDecision.ON_REQUEST
 
                     // Wait for UI to make a decision
                     val decision = _importDataMergeDecision.filter { it != ImportDataMergeDecision.ON_REQUEST }.first()
 
                     when (decision) {
                         ImportDataMergeDecision.NONE -> return@launch
-                        ImportDataMergeDecision.ON_REQUEST -> { error("UI decision did not block!!!") }
+                        ImportDataMergeDecision.ON_REQUEST -> {
+                            error("UI decision did not block!!!")
+                        }
+
                         ImportDataMergeDecision.MERGE -> {}
                         ImportDataMergeDecision.NO_MERGE -> return@launch
                     }
@@ -93,11 +105,9 @@ class DataViewModel @Inject constructor(
                 importDataUseCase.invoke(applicationContext, uri) { progress ->
                     _importProgress.value = progress
                 }
-            }
-            catch (e: CancellationException) {
+            } catch (e: CancellationException) {
                 Log.w("Data Import", "Data Import was canceled: " + e.message)
-            }
-            finally {
+            } finally {
                 _isImporting.value = false
                 _importDataMergeDecision.value = ImportDataMergeDecision.NONE
             }

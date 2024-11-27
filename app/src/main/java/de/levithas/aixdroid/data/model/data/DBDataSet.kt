@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 data class DBDataSet(
     val name: String,
     val description: String,
-    val origin: String
 ) {
     @PrimaryKey(autoGenerate = true) var id: Long = 0
 }

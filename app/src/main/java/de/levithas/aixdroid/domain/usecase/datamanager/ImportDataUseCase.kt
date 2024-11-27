@@ -112,7 +112,6 @@ class ImportDataUseCaseImpl @Inject constructor(
                     id = null,
                     name = "Test",
                     description = "Platzhalter Beschreibung blablablablabla",
-                    origin = "CSV-Import",
                     columns = dataSeriesList
                 )
             )

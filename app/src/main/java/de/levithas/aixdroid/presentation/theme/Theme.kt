@@ -2,6 +2,7 @@ package de.levithas.aixdroid.presentation.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBarColors
@@ -37,14 +38,18 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
-data class CustomColors @OptIn(ExperimentalMaterial3Api::class) constructor(val topAppBarColors: TopAppBarColors)
+data class CustomColors @OptIn(ExperimentalMaterial3Api::class) constructor(
+    val topAppBarColors: TopAppBarColors,
+    val dataItemSelectedCard: CardColors,
+    val dataSetItemCard: CardColors,
+    val dataSeriesItemCard: CardColors
+)
 
 
 val MaterialTheme.customColors: CustomColors
     @Composable
     @ReadOnlyComposable
     get() = LocalCustomColors.current
-
 
 private val LocalCustomColors = staticCompositionLocalOf<CustomColors> {
     error("No CustomColors defined!")
@@ -76,6 +81,24 @@ fun AiXDroidTheme(
             navigationIconContentColor = colorScheme.primary,
             titleContentColor = colorScheme.primary,
             actionIconContentColor = colorScheme.secondary,
+        ),
+        dataItemSelectedCard = CardColors(
+            containerColor = colorScheme.errorContainer,
+            contentColor = colorScheme.error,
+            disabledContainerColor = colorScheme.errorContainer,
+            disabledContentColor = colorScheme.error
+        ),
+        dataSetItemCard = CardColors(
+            containerColor = colorScheme.primaryContainer,
+            contentColor = colorScheme.onPrimary,
+            disabledContainerColor = colorScheme.tertiaryContainer,
+            disabledContentColor = colorScheme.onTertiary
+        ),
+        dataSeriesItemCard = CardColors(
+            containerColor = colorScheme.secondaryContainer,
+            contentColor = colorScheme.onSecondary,
+            disabledContainerColor = colorScheme.tertiaryContainer,
+            disabledContentColor = colorScheme.onTertiary
         )
     )) {
         MaterialTheme(

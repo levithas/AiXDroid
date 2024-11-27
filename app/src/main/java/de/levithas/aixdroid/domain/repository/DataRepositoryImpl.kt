@@ -110,7 +110,6 @@ class DataRepositoryImpl @Inject constructor(
         val dbObject = DBDataSet(
             name = this.name,
             description = this.description,
-            origin = this.origin,
         )
         this.id?.let { dbObject.id = it }
         return dbObject
@@ -161,7 +160,6 @@ class DataRepositoryImpl @Inject constructor(
             id = this.dataSet.id,
             description = this.dataSet.description,
             name = this.dataSet.name,
-            origin = this.dataSet.origin,
             columns = this.columns.map { it.toDomainModel() }
         )
     }

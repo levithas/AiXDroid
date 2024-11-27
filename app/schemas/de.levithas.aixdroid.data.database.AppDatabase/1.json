@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "cc1b6a6cd87e6daa274051f68f8c6639",
+    "identityHash": "a9277f3fd40b484c8f4df0cf433084ae",
     "entities": [
       {
         "tableName": "model_data",
@@ -212,7 +212,7 @@
       },
       {
         "tableName": "DBDataSet",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `origin` TEXT NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
         "fields": [
           {
             "fieldPath": "name",
@@ -223,12 +223,6 @@
           {
             "fieldPath": "description",
             "columnName": "description",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "origin",
-            "columnName": "origin",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -403,7 +397,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cc1b6a6cd87e6daa274051f68f8c6639')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a9277f3fd40b484c8f4df0cf433084ae')"
     ]
   }
 }
