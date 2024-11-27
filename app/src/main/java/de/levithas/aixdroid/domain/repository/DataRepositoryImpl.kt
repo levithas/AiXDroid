@@ -28,16 +28,16 @@ class DataRepositoryImpl @Inject constructor(
         return dao.getAllDataSets().map { flow -> flow.map { it.toDomainModel() } }
     }
 
+    override suspend fun getAllDataSeries(): Flow<List<DataSeries>> {
+        return dao.getAllDataSeries().map { flow -> flow.map { it.toDomainModel() } }
+    }
+
     override suspend fun getDataSet(id: Long): DataSet? {
         return dao.getDataSetById(id)?.toDomainModel()
     }
 
     override suspend fun getDataSetsByName(name: String): Flow<List<DataSet>> {
         return dao.getDataSetsByName(name).map { flow -> flow.map { it.toDomainModel() }}
-    }
-
-    override suspend fun getAllDataSeries(): Flow<List<DataSeries>> {
-        return dao.getAllDataSeries().map { flow -> flow.map { it.toDomainModel() } }
     }
 
     override suspend fun getAllDataSeriesNoFlow(): List<DataSeries> {

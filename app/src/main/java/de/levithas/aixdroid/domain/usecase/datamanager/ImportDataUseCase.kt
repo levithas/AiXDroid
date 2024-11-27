@@ -48,9 +48,9 @@ class ImportDataUseCaseImpl @Inject constructor(
             val dataPointListList = mutableListOf<MutableList<DataPoint>>()
 
             withContext(Dispatchers.IO) {
+                var line = bufferedReader.readLine()
                 do {
                     coroutineContext.ensureActive()
-                    val line = bufferedReader.readLine()
                     byteCount += line.toByteArray().size
 
                     if (lineCount == 0L) {
@@ -104,6 +104,7 @@ class ImportDataUseCaseImpl @Inject constructor(
 
                     lineCount++
                     fileSize?.let { onProgressUpdate(byteCount / it.toFloat()) }
+                    line = bufferedReader.readLine()
                 } while (line != null)
             }
 

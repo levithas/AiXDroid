@@ -3,6 +3,9 @@ package de.levithas.aixdroid.presentation.ui.datamanager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
@@ -34,14 +38,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusModifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -58,6 +65,7 @@ import java.util.Locale
 const val DATA_SET_LIST = 0
 const val DATA_SERIES_LIST = 1
 const val DATA_SET_DETAILS = 2
+const val DATA_SET_CREATION = 3
 
 @Composable
 fun DataManagerComposable(
@@ -65,13 +73,14 @@ fun DataManagerComposable(
     viewModel: DataViewModel = hiltViewModel()
 ) {
     val dataSetList by viewModel.allDataSets.collectAsState()
-    val dataSeriesList by viewModel.allDataSeries.collectAsState()
+    val allDataSeriesList by viewModel.allDataSeries.collectAsState() // TODO: Let database filter dataseries without dataset
+    val markedDataSeriesList = viewModel.markedDataSeriesList
 
     val isImportingData by viewModel.isImporting.collectAsState()
     val importingState by viewModel.importProgress.collectAsState()
     val importDataMergeDecision by viewModel.importDataMergeDecision.collectAsState()
 
-    var fileUri by remember { mutableStateOf(Uri.EMPTY)}
+    var fileUri by remember { mutableStateOf(Uri.EMPTY) }
     val modelUriLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
         fileUri = it
         if (fileUri != Uri.EMPTY) {
@@ -82,16 +91,36 @@ fun DataManagerComposable(
 
     var currentTab by rememberSaveable { mutableIntStateOf(DATA_SET_LIST) }
 
+    var currentDataSeriesList by remember { mutableStateOf<List<DataSeries>>(listOf()) }
+
+    var currentDataSetId by remember { mutableStateOf<Long?>(null) }
+
+
     DataManagerWindow(
         modifier = modifier,
         currentTab = currentTab,
         onBackToOverview = { currentTab = DATA_SET_LIST },
+
         dataSetList = dataSetList,
+        dataSeriesList = allDataSeriesList,
+        markedDataSeriesList = markedDataSeriesList,
+        onToggleDataSeriesMark = { id -> viewModel.toggleMarkDataSeries(id) },
+
+        onOpenDataSetDetails = { dataSet ->
+            currentDataSetId = dataSet.id
+            currentTab = DATA_SET_DETAILS
+        },
+        onOpenRemainingDataSeries = {},
+        onOpenDataSetSeriesList = { dataSeriesList ->
+            currentDataSeriesList = dataSeriesList
+            currentTab = DATA_SERIES_LIST
+        },
+
         onOpenDataImport = { modelUriLauncher.launch("text/*") },
         isImportingData = isImportingData, // Shows loading bar
         dataImportState = importingState, // State of loading bar
         onCancelImport = { viewModel.cancelDataImport() },
-        dataSeriesList = dataSeriesList
+        currentDataSetId = currentDataSetId
     )
 
     if (importDataMergeDecision == ImportDataMergeDecision.ON_REQUEST) {
@@ -115,9 +144,15 @@ fun DataManagerComposable(
 fun DataManagerWindow(
     modifier: Modifier,
     currentTab: Int,
+    currentDataSetId: Long?,
     onBackToOverview: () -> Unit,
     dataSetList: List<DataSet>,
     dataSeriesList: List<DataSeries>,
+    markedDataSeriesList: List<Long>,
+    onToggleDataSeriesMark: (Long) -> Unit,
+    onOpenDataSetDetails: (DataSet) -> Unit,
+    onOpenRemainingDataSeries: () -> Unit,
+    onOpenDataSetSeriesList: (List<DataSeries>) -> Unit,
     onOpenDataImport: () -> Unit,
     isImportingData: Boolean,
     dataImportState: Float,
@@ -127,9 +162,18 @@ fun DataManagerWindow(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.data_manager_title)) },
-                colors = MaterialTheme.customColors.topAppBarColors
+                colors = MaterialTheme.customColors.topAppBarColors,
+                navigationIcon = {
+                    if (currentTab > 0) {
+                        IconButton(
+                            onClick = onBackToOverview
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                },
             )
-        }
+        },
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -139,41 +183,58 @@ fun DataManagerWindow(
         ) {
             if (isImportingData) {
                 DataSeriesImportLoading(
-                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 32.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 32.dp),
                     loadingState = dataImportState,
                     onCancelImport = onCancelImport
                 )
             }
-            
+
             when (currentTab) {
                 DATA_SET_LIST -> DataListWindow(
                     modifier = modifier,
-                    onOpenDataImport = {},
+                    onOpenDataImport = onOpenDataImport
                 ) {
                     DataSetList(
-                        modifier = modifier,
+                        modifier = Modifier,
                         dataSetList = dataSetList,
-                        dataSeriesWithoutDataSetList = dataSeriesList.filter { serie ->
-                            dataSetList.none { dataSet ->
-                                dataSet.columns.any { it.id == serie.id } }}
+                        dataSeriesWithoutDataSetList = dataSeriesList.filter { series ->
+                            dataSetList.isEmpty() || dataSetList.none { dataSet ->
+                                dataSet.columns.any { it.id == series.id }
+                            }
+                        },
+                        onOpenDataSetDetails = onOpenDataSetDetails,
+                        onOpenRemainingDataSeries = onOpenRemainingDataSeries,
                     )
                 }
+
                 DATA_SERIES_LIST -> DataListWindow(
-                    modifier = modifier,
-                    onOpenDataImport = {},
+                    modifier = Modifier,
+                    onOpenDataImport = onOpenDataImport
                 ) {
                     DataSeriesList(
                         modifier = modifier,
-                        dataSeriesList = dataSeriesList
+                        dataSeriesList = dataSeriesList,
+                        markedDataSeriesList = markedDataSeriesList,
+                        onToggleDataSeriesMark = onToggleDataSeriesMark
                     )
                 }
-                DATA_SET_DETAILS -> {}
+
+                DATA_SET_DETAILS -> DataSetDetails(
+                    modifier = modifier,
+                    dataSet = dataSetList.find { it.id == currentDataSetId },
+                    onOpenDataSetSeriesList = onOpenDataSetSeriesList,
+                    onDeleteDataSeries = {},
+                    onExportDataSeries = {},
+                )
+
+                DATA_SET_CREATION -> {}
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataListWindow(
     modifier: Modifier,
@@ -194,7 +255,7 @@ fun DataListWindow(
         ),
         onClick = onOpenDataImport
     ) {
-        Icon(Icons.Filled.Download , "Import" , modifier = Modifier)
+        Icon(Icons.Filled.Download, "Import", modifier = Modifier)
     }
 }
 
@@ -202,35 +263,33 @@ fun DataListWindow(
 fun DataSetList(
     modifier: Modifier,
     dataSetList: List<DataSet>,
-    dataSeriesWithoutDataSetList: List<DataSeries>
+    dataSeriesWithoutDataSetList: List<DataSeries>,
+    onOpenDataSetDetails: (DataSet) -> Unit,
+    onOpenRemainingDataSeries: () -> Unit,
 ) {
-    if (dataSetList.isNotEmpty()) {
-        LazyColumn(
-            modifier = modifier,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            if (dataSeriesWithoutDataSetList.isNotEmpty()) {
-                item {
-                    DataSetItem(
-                        dataSet = DataSet(
-                            null, "Nicht zugewiesene Datenreihen", "",
-                            columns = dataSeriesWithoutDataSetList,
-                        ),
-                        onOpenDataSetDetails = {}
-                    )
-                }
-            }
-
-            items(dataSetList) { item ->
+    LazyColumn(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        if (dataSeriesWithoutDataSetList.isNotEmpty()) {
+            item {
                 DataSetItem(
-                    dataSet = item,
-                    onOpenDataSetDetails = {}
+                    dataSet = DataSet(
+                        null, stringResource(R.string.data_manager_not_designated_data_series), "",
+                        columns = dataSeriesWithoutDataSetList,
+                    ),
+                    onOpenDataSetDetails = { _ -> onOpenRemainingDataSeries() },
                 )
             }
-        }    
-    } else {
-        Text("No Datasets available")
+        }
+
+        items(dataSetList) { item ->
+            DataSetItem(
+                dataSet = item,
+                onOpenDataSetDetails = onOpenDataSetDetails,
+            )
+        }
     }
 }
 
@@ -238,7 +297,9 @@ fun DataSetList(
 @Composable
 fun DataSeriesList(
     modifier: Modifier,
-    dataSeriesList: List<DataSeries>
+    dataSeriesList: List<DataSeries>,
+    markedDataSeriesList: List<Long>,
+    onToggleDataSeriesMark: (Long) -> Unit
 ) {
     if (dataSeriesList.isNotEmpty()) {
         LazyColumn(
@@ -249,9 +310,9 @@ fun DataSeriesList(
             items(dataSeriesList) { item ->
                 DataSeriesItem(
                     dataSeriesItem = item,
-                    showMarker = true,
-                    isMarked = true,
-                    onCheckedChanged = {}
+                    showMarker = markedDataSeriesList.isNotEmpty(),
+                    isMarked = markedDataSeriesList.contains(item.id),
+                    onCheckedChanged = { _ -> onToggleDataSeriesMark(item.id!!) }
                 )
             }
         }
@@ -280,7 +341,7 @@ fun DataSeriesItem(
                 .fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if(showMarker) {
+            if (showMarker) {
                 Checkbox(
                     checked = isMarked,
                     onCheckedChange = onCheckedChanged
@@ -288,8 +349,13 @@ fun DataSeriesItem(
             }
 
             Card(
-                modifier = modifier
-                    .fillMaxHeight(),
+                modifier = if (!showMarker) modifier
+                    .fillMaxHeight()
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onLongPress = { onCheckedChanged(true) },
+                        )
+                    } else modifier.fillMaxHeight(),
                 colors = MaterialTheme.customColors.dataSeriesItemCard
             ) {
                 Column(
@@ -317,10 +383,16 @@ fun DataSeriesItem(
 @Composable
 fun DataSetItem(
     dataSet: DataSet,
-    onOpenDataSetDetails: (DataSet) -> Unit
+    onOpenDataSetDetails: (DataSet) -> Unit,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 128.dp).padding(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 128.dp)
+            .padding(8.dp)
+            .clickable {
+                onOpenDataSetDetails(dataSet)
+            },
         colors = MaterialTheme.customColors.dataSetItemCard
     ) {
         Row(
@@ -349,132 +421,134 @@ fun DataSetItem(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataSetDetails(
     modifier: Modifier,
     dataSet: DataSet?,
-    onBackToOverview: () -> Unit,
+    onOpenDataSetSeriesList: (List<DataSeries>) -> Unit,
     onDeleteDataSeries: (Long) -> Unit,
     onExportDataSeries: (Long) -> Unit
 ) {
     dataSet?.let {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(dataSet.name) },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = onBackToOverview
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    colors = MaterialTheme.customColors.topAppBarColors
-                )
-            }
-        ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Column(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(paddingValues),
+                    .fillMaxWidth()
+                    .padding(8.dp),
                 verticalArrangement = Arrangement.SpaceBetween,
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
+                Text(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .align(AbsoluteAlignment.Left),
+                    style = MaterialTheme.typography.titleLarge,
+                    text = dataSet.name
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .align(AbsoluteAlignment.Left),
+                    style = MaterialTheme.typography.titleMedium,
+                    text = "Description:"
+                )
+                Text(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .align(AbsoluteAlignment.Left),
+                    style = MaterialTheme.typography.bodyMedium,
+                    text = dataSet.description
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(horizontal = 16.dp)
                 ) {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 16.dp).align(AbsoluteAlignment.Left),
-                        style = MaterialTheme.typography.titleMedium,
-                        text = "Description:"
-                    )
-                    Text(
-                        modifier = Modifier.padding(horizontal = 16.dp).align(AbsoluteAlignment.Left),
-                        style = MaterialTheme.typography.bodyMedium,
-                        text = dataSet.description
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-                    ) {
-                        Text(style = MaterialTheme.typography.titleMedium, text = "Start Date:")
-                        Spacer(Modifier.width(8.dp))
-                        Text(text = Date(dataSet.columns.minOf { it.startTime?.time?:0 }).toString())
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-                    ) {
-                        Text(style = MaterialTheme.typography.titleMedium, text = "End Date:")
-                        Spacer(Modifier.width(8.dp))
-                        Text(text = Date(dataSet.columns.maxOf { it.endTime?.time?:0 }).toString())
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-                    ) {
-                        Text(style = MaterialTheme.typography.titleMedium, text = "Feature Count:")
-                        Spacer(Modifier.width(8.dp))
-                        Text(text = dataSet.columns.size.toString())
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-                    ) {
-                        Text(style = MaterialTheme.typography.titleMedium, text = "Total Data Count:")
-                        Spacer(Modifier.width(8.dp))
-                        Text(text = dataSet.columns.sumOf { it.count?:0 }.toString())
-                    }
-
+                    Text(style = MaterialTheme.typography.titleMedium, text = "Start Date:")
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = Date(dataSet.columns.minOf { it.startTime?.time ?: 0 }).toString())
                 }
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Bottom
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                 ) {
-                    Button(
-                        modifier = modifier.fillMaxWidth(),
-                        onClick = {
+                    Text(style = MaterialTheme.typography.titleMedium, text = "End Date:")
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = Date(dataSet.columns.maxOf { it.endTime?.time ?: 0 }).toString())
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(style = MaterialTheme.typography.titleMedium, text = "Feature Count:")
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = dataSet.columns.size.toString())
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(style = MaterialTheme.typography.titleMedium, text = "Total Data Count:")
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = dataSet.columns.sumOf { it.count ?: 0 }.toString())
+                }
 
-                        }
-                    ) {
-                        Text("Predict with Model")
-                    }
-                    Button(
-                        modifier = modifier.fillMaxWidth(),
-                        onClick = {
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
 
-                        }
-                    ) {
-                        Text("Show Data Series")
                     }
-                    Button(
-                        modifier = modifier.fillMaxWidth(),
-                        onClick = {
+                ) {
+                    Text("Predict with Model")
+                }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onOpenDataSetSeriesList(dataSet.columns) }
+                ) {
+                    Text("Show Features")
+                }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
 
-                        }
-                    ) {
-                        Text("Dissolve Data Set")
                     }
-                    Button(
-                        modifier = modifier.fillMaxWidth(),
-                        onClick = {
+                ) {
+                    Text("Dissolve Data Set")
+                }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
 
-                        }
-                    ) {
-                        Text("Export Data")
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        modifier = modifier.fillMaxWidth(),
-                        onClick = {
+                ) {
+                    Text("Export Data")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
 
-                        }
-                    ) {
-                        Text("Delete Data")
                     }
+                ) {
+                    Text("Delete Data")
                 }
             }
         }
@@ -497,7 +571,7 @@ fun DataSeriesImportLoading(
         ) {
             Text(
                 modifier = Modifier.padding(8.dp),
-                text = "Data importing..." + String.format(locale = Locale.GERMAN,"%.2f", loadingState) + "%"
+                text = "Data importing..." + String.format(locale = Locale.GERMAN, "%.2f", loadingState * 100) + "%"
             )
             Button(
                 onClick = onCancelImport
@@ -539,17 +613,25 @@ val dataSetPreviewItem = DataSet(
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 @Composable
 fun Preview() {
-    AiXDroidTheme() { DataManagerWindow(
-        modifier = Modifier,
-        currentTab = 0,
-        dataSetList = listOf(dataSetPreviewItem),
-        onOpenDataImport = {},
-        isImportingData = false,
-        dataImportState = 0.0f,
-        onCancelImport = {},
-        onBackToOverview = {},
-        dataSeriesList = dataSeriesPreviewList
-    ) }
+    AiXDroidTheme() {
+        DataManagerWindow(
+            modifier = Modifier,
+            currentTab = 0,
+            dataSetList = listOf(dataSetPreviewItem),
+            onOpenDataImport = {},
+            isImportingData = false,
+            dataImportState = 0.0f,
+            onCancelImport = {},
+            onBackToOverview = {},
+            dataSeriesList = dataSeriesPreviewList,
+            markedDataSeriesList = listOf(),
+            onToggleDataSeriesMark = {},
+            currentDataSetId = 0,
+            onOpenDataSetDetails = {},
+            onOpenRemainingDataSeries = {},
+            onOpenDataSetSeriesList = {}
+        )
+    }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
@@ -561,7 +643,7 @@ fun DataSeriesDetailPreview() {
             dataSet = dataSetPreviewItem,
             onDeleteDataSeries = {},
             onExportDataSeries = {},
-            onBackToOverview = {}
+            onOpenDataSetSeriesList = {},
         )
     }
 }

@@ -3,6 +3,10 @@ package de.levithas.aixdroid.presentation.ui.datamanager
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.collection.emptyLongList
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,7 +50,16 @@ class DataViewModel @Inject constructor(
     private val _allDataSeries = MutableStateFlow<List<DataSeries>>(emptyList())
     val allDataSeries: StateFlow<List<DataSeries>> get() = _allDataSeries
 
+    private val _markedDataSeriesList = mutableStateListOf<Long>()
+    val markedDataSeriesList get() = _markedDataSeriesList
 
+    fun toggleMarkDataSeries(dataSeriesId: Long) {
+        if (_markedDataSeriesList.contains(dataSeriesId)) {
+            _markedDataSeriesList.remove(dataSeriesId)
+        } else {
+            _markedDataSeriesList.add(dataSeriesId)
+        }
+    }
 
     private val _isImporting = MutableStateFlow(false)
     val isImporting: StateFlow<Boolean> get() = _isImporting
@@ -57,18 +70,23 @@ class DataViewModel @Inject constructor(
     private val _importDataMergeDecision = MutableStateFlow(ImportDataMergeDecision.NONE)
     val importDataMergeDecision: StateFlow<ImportDataMergeDecision> get() = _importDataMergeDecision
 
-
     private var importJob: Job? = null
 
     init {
-        fetchAllData()
+        fetchDataSeriesList()
+        fetchDataSetList()
     }
 
-    private fun fetchAllData() {
+    private fun fetchDataSeriesList() {
         viewModelScope.launch(Dispatchers.IO) {
             getDataListsUseCase.getDataSeriesFlow().collect { list ->
                 _allDataSeries.value = list
             }
+        }
+    }
+
+    private fun fetchDataSetList() {
+        viewModelScope.launch(Dispatchers.IO) {
             getDataListsUseCase.getDataSetsFlow().collect { list ->
                 _allDataSets.value = list
             }

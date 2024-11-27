@@ -5,14 +5,7 @@ import androidx.room.Junction
 import androidx.room.Relation
 
 data class DBModelWithTensors(
-    @Embedded val modelData: DBModelData = DBModelData(
-        uri = "",  // Beispiel für einen leeren URI
-        name = "",
-        description = "",
-        version = "",
-        author = "",
-        licence = ""
-    ),
+    @Embedded val modelData: DBModelData,
     @Relation(
         parentColumn = "uri",
         entityColumn = "id",
