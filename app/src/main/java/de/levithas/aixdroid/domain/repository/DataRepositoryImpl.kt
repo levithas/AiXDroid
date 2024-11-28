@@ -98,6 +98,10 @@ class DataRepositoryImpl @Inject constructor(
         return dao.updateDataSeries(dataSeries.toDBModel())
     }
 
+    override suspend fun updateDataSet(dataSet: DataSet) {
+        dao.updateDataSet(dataSet.toDBModel())
+    }
+
     override suspend fun deleteDataSeries(id: Long) {
         return dao.deleteDataSeries(id)
     }

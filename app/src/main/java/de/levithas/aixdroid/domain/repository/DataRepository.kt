@@ -21,6 +21,7 @@ interface DataRepository {
     suspend fun addDataSet(dataSet: DataSet) : Long
     suspend fun addDataSeries(dataSeries: List<DataSeries>) : List<Long>
     suspend fun addDataPoints(dataPointList: List<DataPoint>, dataSeriesId: Long) : List<Long>
+    suspend fun updateDataSet(dataSet: DataSet)
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
     suspend fun deleteDataSeries(id: Long)
     suspend fun deleteDataSet(id: Long)

@@ -3,8 +3,8 @@ package de.levithas.aixdroid.presentation.ui.datamanager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.collection.emptyObjectList
 import androidx.compose.foundation.clickable
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,32 +22,31 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Merge
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -90,37 +89,88 @@ fun DataManagerComposable(
     }
 
     var currentTab by rememberSaveable { mutableIntStateOf(DATA_SET_LIST) }
+    
 
     var currentDataSeriesList by remember { mutableStateOf<List<DataSeries>>(listOf()) }
-
-    var currentDataSetId by remember { mutableStateOf<Long?>(null) }
+    val currentDataSet by viewModel.currentDataSet.collectAsState()
 
 
     DataManagerWindow(
         modifier = modifier,
         currentTab = currentTab,
-        onBackToOverview = { currentTab = DATA_SET_LIST },
+        onBackToOverview = {
+            when (currentTab) {
+                DATA_SET_DETAILS -> {
+                    viewModel.resetCurrentDataSet()
+                    currentTab = DATA_SET_LIST
+                }
+                DATA_SET_CREATION -> {
+                    currentTab = if (currentDataSet == null) {
+                        DATA_SET_LIST
+                    } else {
+                        DATA_SET_DETAILS
+                    }
+                }
+                DATA_SERIES_LIST -> {
+                    currentTab = if (currentDataSet == null) {
+                        DATA_SET_LIST
+                    } else {
+                        DATA_SET_DETAILS
+                    }
+                }
+            }
+        },
 
         dataSetList = dataSetList,
         dataSeriesList = allDataSeriesList,
+        currentDataSeriesList = currentDataSeriesList,
         markedDataSeriesList = markedDataSeriesList,
+        currentDataSet = currentDataSet,
         onToggleDataSeriesMark = { id -> viewModel.toggleMarkDataSeries(id) },
 
-        onOpenDataSetDetails = { dataSet ->
-            currentDataSetId = dataSet.id
+        onOpenDataSetDetails = { dataSetId ->
+            viewModel.setCurrentDataSet(dataSetId)
             currentTab = DATA_SET_DETAILS
         },
-        onOpenRemainingDataSeries = {},
+        onOpenRemainingDataSeries = { dataSeriesList ->
+            currentDataSeriesList = dataSeriesList
+            currentTab = DATA_SERIES_LIST
+        },
         onOpenDataSetSeriesList = { dataSeriesList ->
             currentDataSeriesList = dataSeriesList
             currentTab = DATA_SERIES_LIST
         },
+        onJoinToDataSet = {
+            currentDataSeriesList = markedDataSeriesList
+            currentTab = DATA_SET_CREATION
+        },
+
 
         onOpenDataImport = { modelUriLauncher.launch("text/*") },
         isImportingData = isImportingData, // Shows loading bar
         dataImportState = importingState, // State of loading bar
         onCancelImport = { viewModel.cancelDataImport() },
-        currentDataSetId = currentDataSetId
+
+
+        onSaveDataSet = { adaptedDataSet ->
+            viewModel.createUpdateDataSet(adaptedDataSet)
+            viewModel.clearMarkedDataSeriesList()
+            currentTab = DATA_SET_LIST
+        },
+
+        onDissolveDataSet = { currentDataSet?.id?.let {
+            viewModel.dissolveDataSet(it)
+            viewModel.resetCurrentDataSet()
+            currentTab = DATA_SET_LIST
+        } },
+        onEditDataSet = {
+            currentDataSeriesList = emptyList()
+            currentTab = DATA_SET_CREATION
+        },
+        onRemoveDataSeriesFromDataSet = {
+            currentDataSet?.let { viewModel.removeDataSeriesFromDataSet(it, currentDataSeriesList) }
+            currentTab = DATA_SET_DETAILS
+        }
     )
 
     if (importDataMergeDecision == ImportDataMergeDecision.ON_REQUEST) {
@@ -144,19 +194,25 @@ fun DataManagerComposable(
 fun DataManagerWindow(
     modifier: Modifier,
     currentTab: Int,
-    currentDataSetId: Long?,
+    currentDataSet: DataSet?,
+    currentDataSeriesList: List<DataSeries>,
     onBackToOverview: () -> Unit,
     dataSetList: List<DataSet>,
     dataSeriesList: List<DataSeries>,
-    markedDataSeriesList: List<Long>,
-    onToggleDataSeriesMark: (Long) -> Unit,
-    onOpenDataSetDetails: (DataSet) -> Unit,
-    onOpenRemainingDataSeries: () -> Unit,
+    markedDataSeriesList: List<DataSeries>,
+    onToggleDataSeriesMark: (DataSeries) -> Unit,
+    onJoinToDataSet: () -> Unit,
+    onOpenDataSetDetails: (Long) -> Unit,
+    onEditDataSet: () -> Unit,
+    onOpenRemainingDataSeries: (List<DataSeries>) -> Unit,
     onOpenDataSetSeriesList: (List<DataSeries>) -> Unit,
     onOpenDataImport: () -> Unit,
     isImportingData: Boolean,
     dataImportState: Float,
-    onCancelImport: () -> Unit
+    onCancelImport: () -> Unit,
+    onSaveDataSet: (DataSet) -> Unit,
+    onDissolveDataSet: () -> Unit,
+    onRemoveDataSeriesFromDataSet: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -194,7 +250,11 @@ fun DataManagerWindow(
             when (currentTab) {
                 DATA_SET_LIST -> DataListWindow(
                     modifier = modifier,
-                    onOpenDataImport = onOpenDataImport
+                    onOpenDataImport = onOpenDataImport,
+                    currentDataSet = currentDataSet,
+                    onJoinToDataSet = {},
+                    showJoinButton = false,
+                    onRemoveDataSeriesFromDataSet = {}
                 ) {
                     DataSetList(
                         modifier = Modifier,
@@ -211,25 +271,35 @@ fun DataManagerWindow(
 
                 DATA_SERIES_LIST -> DataListWindow(
                     modifier = Modifier,
-                    onOpenDataImport = onOpenDataImport
+                    currentDataSet = currentDataSet,
+                    onOpenDataImport = onOpenDataImport,
+                    showJoinButton = markedDataSeriesList.isNotEmpty(),
+                    onJoinToDataSet = onJoinToDataSet,
+                    onRemoveDataSeriesFromDataSet = onRemoveDataSeriesFromDataSet
                 ) {
                     DataSeriesList(
                         modifier = modifier,
-                        dataSeriesList = dataSeriesList,
+                        dataSeriesList = currentDataSeriesList,
                         markedDataSeriesList = markedDataSeriesList,
-                        onToggleDataSeriesMark = onToggleDataSeriesMark
+                        onToggleDataSeriesMark = onToggleDataSeriesMark,
                     )
                 }
 
                 DATA_SET_DETAILS -> DataSetDetails(
-                    modifier = modifier,
-                    dataSet = dataSetList.find { it.id == currentDataSetId },
+                    dataSet = currentDataSet,
                     onOpenDataSetSeriesList = onOpenDataSetSeriesList,
+                    onDissolveDataSet = onDissolveDataSet,
                     onDeleteDataSeries = {},
                     onExportDataSeries = {},
+                    onEditDataSet = onEditDataSet
                 )
 
-                DATA_SET_CREATION -> {}
+                DATA_SET_CREATION -> DataSetCreation(
+                    modifier = modifier,
+                    currentDataSet = currentDataSet,
+                    currentDataSeriesList = currentDataSeriesList,
+                    onSaveChanges = onSaveDataSet
+                )
             }
         }
     }
@@ -238,24 +308,62 @@ fun DataManagerWindow(
 @Composable
 fun DataListWindow(
     modifier: Modifier,
+    currentDataSet: DataSet?,
     onOpenDataImport: () -> Unit,
+    showJoinButton: Boolean,
+    onJoinToDataSet: () -> Unit,
+    onRemoveDataSeriesFromDataSet: () -> Unit,
     dataListComposable: @Composable() () -> Unit
 ) {
     dataListComposable()
 
-    IconButton(
-        modifier = modifier
-            .padding(8.dp)
-            .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
-        colors = IconButtonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.primary,
-            disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            disabledContentColor = MaterialTheme.colorScheme.tertiary
-        ),
-        onClick = onOpenDataImport
-    ) {
-        Icon(Icons.Filled.Download, "Import", modifier = Modifier)
+    if (showJoinButton) {
+        if(currentDataSet != null) {
+            IconButton(
+                modifier = modifier
+                    .padding(8.dp)
+                    .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
+                colors = IconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.secondary,
+                    disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    disabledContentColor = MaterialTheme.colorScheme.tertiary
+                ),
+                onClick = onRemoveDataSeriesFromDataSet
+            ) {
+                Icon(Icons.Filled.Remove, "Remove", modifier = Modifier)
+            }
+        } else {
+            IconButton(
+                modifier = modifier
+                    .padding(8.dp)
+                    .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
+                colors = IconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.secondary,
+                    disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    disabledContentColor = MaterialTheme.colorScheme.tertiary
+                ),
+                onClick = onJoinToDataSet
+            ) {
+                Icon(Icons.Filled.Merge, "Join", modifier = Modifier)
+            }    
+        }
+    } else {
+        IconButton(
+            modifier = modifier
+                .padding(8.dp)
+                .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
+            colors = IconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                disabledContentColor = MaterialTheme.colorScheme.tertiary
+            ),
+            onClick = onOpenDataImport
+        ) {
+            Icon(Icons.Filled.Download, "Import", modifier = Modifier)
+        }
     }
 }
 
@@ -264,8 +372,8 @@ fun DataSetList(
     modifier: Modifier,
     dataSetList: List<DataSet>,
     dataSeriesWithoutDataSetList: List<DataSeries>,
-    onOpenDataSetDetails: (DataSet) -> Unit,
-    onOpenRemainingDataSeries: () -> Unit,
+    onOpenDataSetDetails: (Long) -> Unit,
+    onOpenRemainingDataSeries: (List<DataSeries>) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
@@ -279,7 +387,7 @@ fun DataSetList(
                         null, stringResource(R.string.data_manager_not_designated_data_series), "",
                         columns = dataSeriesWithoutDataSetList,
                     ),
-                    onOpenDataSetDetails = { _ -> onOpenRemainingDataSeries() },
+                    onOpenDataSetDetails = { onOpenRemainingDataSeries(dataSeriesWithoutDataSetList) },
                 )
             }
         }
@@ -287,7 +395,7 @@ fun DataSetList(
         items(dataSetList) { item ->
             DataSetItem(
                 dataSet = item,
-                onOpenDataSetDetails = onOpenDataSetDetails,
+                onOpenDataSetDetails = { item.id?.let { onOpenDataSetDetails(it) } },
             )
         }
     }
@@ -298,8 +406,8 @@ fun DataSetList(
 fun DataSeriesList(
     modifier: Modifier,
     dataSeriesList: List<DataSeries>,
-    markedDataSeriesList: List<Long>,
-    onToggleDataSeriesMark: (Long) -> Unit
+    markedDataSeriesList: List<DataSeries>,
+    onToggleDataSeriesMark: (DataSeries) -> Unit
 ) {
     if (dataSeriesList.isNotEmpty()) {
         LazyColumn(
@@ -311,13 +419,16 @@ fun DataSeriesList(
                 DataSeriesItem(
                     dataSeriesItem = item,
                     showMarker = markedDataSeriesList.isNotEmpty(),
-                    isMarked = markedDataSeriesList.contains(item.id),
-                    onCheckedChanged = { _ -> onToggleDataSeriesMark(item.id!!) }
+                    isMarked = markedDataSeriesList.contains(item),
+                    onCheckedChanged = { _ -> onToggleDataSeriesMark(item) }
                 )
             }
         }
     } else {
-        Text("No Data Series available")
+        Text(
+            modifier = modifier,
+            text = "No Data Series"
+        )
     }
 }
 
@@ -383,7 +494,7 @@ fun DataSeriesItem(
 @Composable
 fun DataSetItem(
     dataSet: DataSet,
-    onOpenDataSetDetails: (DataSet) -> Unit,
+    onOpenDataSetDetails: () -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -391,7 +502,7 @@ fun DataSetItem(
             .defaultMinSize(minHeight = 128.dp)
             .padding(8.dp)
             .clickable {
-                onOpenDataSetDetails(dataSet)
+                onOpenDataSetDetails()
             },
         colors = MaterialTheme.customColors.dataSetItemCard
     ) {
@@ -420,12 +531,76 @@ fun DataSetItem(
     }
 }
 
+@Composable
+fun DataSetCreation(
+    modifier: Modifier,
+    currentDataSet: DataSet?,
+    currentDataSeriesList: List<DataSeries>,
+    onSaveChanges: (DataSet) -> Unit,
+) {
+    var name by remember { mutableStateOf(currentDataSet?.name?:"")}
+    var description by remember { mutableStateOf(currentDataSet?.description?:"")}
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+
+        ) {
+            TextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name") }
+            )
+            Spacer(Modifier.height(16.dp))
+            TextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description") }
+            )
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            DataSeriesList(
+                modifier = Modifier.padding(8.dp),
+                dataSeriesList = (currentDataSet?.columns?: emptyList()) + (currentDataSeriesList),
+                markedDataSeriesList = emptyList(),
+                onToggleDataSeriesMark = {}
+            )
+        }
+
+        Button(
+            modifier = modifier,
+            onClick = {
+                onSaveChanges(
+                    DataSet(
+                        id = currentDataSet?.id,
+                        name = name,
+                        description = description,
+                        columns = (currentDataSet?.columns?: emptyList()) + (currentDataSeriesList)
+                    )
+                )
+            },
+        ) {
+            Text("Save")
+        }
+    }
+}
 
 @Composable
 fun DataSetDetails(
-    modifier: Modifier,
     dataSet: DataSet?,
     onOpenDataSetSeriesList: (List<DataSeries>) -> Unit,
+    onEditDataSet: () -> Unit,
+    onDissolveDataSet: () -> Unit,
     onDeleteDataSeries: (Long) -> Unit,
     onExportDataSeries: (Long) -> Unit
 ) {
@@ -513,11 +688,9 @@ fun DataSetDetails(
             ) {
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-
-                    }
+                    onClick = onEditDataSet
                 ) {
-                    Text("Predict with Model")
+                    Text("Edit Data Set")
                 }
                 Button(
                     modifier = Modifier.fillMaxWidth(),
@@ -527,9 +700,7 @@ fun DataSetDetails(
                 }
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-
-                    }
+                    onClick = onDissolveDataSet
                 ) {
                     Text("Dissolve Data Set")
                 }
@@ -626,10 +797,16 @@ fun Preview() {
             dataSeriesList = dataSeriesPreviewList,
             markedDataSeriesList = listOf(),
             onToggleDataSeriesMark = {},
-            currentDataSetId = 0,
+            currentDataSet = dataSetPreviewItem,
             onOpenDataSetDetails = {},
             onOpenRemainingDataSeries = {},
-            onOpenDataSetSeriesList = {}
+            onOpenDataSetSeriesList = {},
+            onJoinToDataSet = {},
+            currentDataSeriesList = emptyList(),
+            onSaveDataSet = {},
+            onDissolveDataSet = {},
+            onEditDataSet = {},
+            onRemoveDataSeriesFromDataSet = {}
         )
     }
 }
@@ -639,11 +816,12 @@ fun Preview() {
 fun DataSeriesDetailPreview() {
     AiXDroidTheme {
         DataSetDetails(
-            modifier = Modifier,
             dataSet = dataSetPreviewItem,
             onDeleteDataSeries = {},
             onExportDataSeries = {},
             onOpenDataSetSeriesList = {},
+            onDissolveDataSet = {},
+            onEditDataSet = {}
         )
     }
 }
@@ -692,6 +870,19 @@ fun DataSeriesItemPreview() {
                 endTime = Date(1000100)
             ),
             onCheckedChanged = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
+@Composable
+fun DataSetCreationPreview() {
+    AiXDroidTheme {
+        DataSetCreation(
+            modifier = Modifier,
+            currentDataSet = dataSetPreviewItem,
+            currentDataSeriesList = emptyList(),
+            onSaveChanges = {},
         )
     }
 }

@@ -2,18 +2,12 @@ package de.levithas.aixdroid.domain.usecase.datamanager
 
 import android.content.Context
 import android.net.Uri
-import androidx.compose.runtime.collectAsState
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import de.levithas.aixdroid.domain.repository.DataRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toCollection
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.IOException
@@ -21,21 +15,23 @@ import java.io.InputStreamReader
 import java.util.Date
 import javax.inject.Inject
 
-interface ImportDataUseCase {
-    suspend operator fun invoke(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit)
+interface DataSeriesUseCase {
+    suspend fun importFromCSV(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit)
     suspend fun checkExistingDataSeriesNames(context: Context, uri: Uri) : Boolean
+    suspend fun deleteDataSeries(dataSeriesId: Long)
 }
 
-class ImportDataUseCaseImpl @Inject constructor(
+class DataSeriesUseCaseImpl @Inject constructor(
     private val dataRepository: DataRepository,
-) : ImportDataUseCase {
+    private val dataSetUseCase: DataSetUseCase
+) : DataSeriesUseCase {
 
     private val maxElementsPerCreation = 250
     private val separatorSign = ','
 
     private var existingDataSeriesNameMap = emptyMap<String, DataSeries>()
 
-    override suspend fun invoke(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit) {
+    override suspend fun importFromCSV(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit) {
         try {
             val inputStream = context.contentResolver.openInputStream(uri)
             val inputStreamReader = InputStreamReader(inputStream)
@@ -107,15 +103,6 @@ class ImportDataUseCaseImpl @Inject constructor(
                     line = bufferedReader.readLine()
                 } while (line != null)
             }
-
-            dataRepository.addDataSet(
-                DataSet(
-                    id = null,
-                    name = "Test",
-                    description = "Platzhalter Beschreibung blablablablabla",
-                    columns = dataSeriesList
-                )
-            )
         } catch (e: IOException) {
             e.message?.let { error(it) }
         }
@@ -163,5 +150,9 @@ class ImportDataUseCaseImpl @Inject constructor(
             time = Date(values[0].toLong())
         )) } }
         return pointList
+    }
+
+    override suspend fun deleteDataSeries(dataSeriesId: Long) {
+        dataRepository.deleteDataSeries(dataSeriesId)
     }
 }

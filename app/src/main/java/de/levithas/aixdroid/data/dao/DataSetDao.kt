@@ -34,6 +34,9 @@ interface DataSetDao {
     @Update(onConflict = OnConflictStrategy.ABORT)
     suspend fun updateDataSeries(dataSeries: DBDataSeries) : Int
 
+    @Update(onConflict = OnConflictStrategy.ABORT)
+    suspend fun updateDataSet(dataSet: DBDataSet) : Int
+
     @Transaction
     @Query("SELECT * FROM dbdataset")
     fun getAllDataSets(): Flow<List<DBDataSetWithDataSeries>>
