@@ -27,8 +27,9 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideDataRepository(
-        dao: DataSetDao
+        dao: DataSetDao,
+        modelDao: ModelDataDao
     ) : DataRepository {
-        return DataRepositoryImpl(dao)
+        return DataRepositoryImpl(dao, provideModelRepository(modelDao))
     }
 }

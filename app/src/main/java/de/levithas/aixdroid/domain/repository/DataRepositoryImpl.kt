@@ -1,5 +1,6 @@
 package de.levithas.aixdroid.domain.repository
 
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -12,6 +13,7 @@ import de.levithas.aixdroid.data.model.data.DBDataSetToDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataSetWithDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataPoint
+import de.levithas.aixdroid.data.model.data.DBDataSetToModelData
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
@@ -22,7 +24,8 @@ import java.util.Date
 import javax.inject.Inject
 
 class DataRepositoryImpl @Inject constructor(
-    private val dao: DataSetDao
+    private val dao: DataSetDao,
+    private val modelRepository: ModelRepository
 ) : DataRepository {
     override suspend fun getAllDataSets(): Flow<List<DataSet>> {
         return dao.getAllDataSets().map { flow -> flow.map { it.toDomainModel() } }
@@ -56,7 +59,19 @@ class DataRepositoryImpl @Inject constructor(
                 // TODO: Serie hinzufügen, wenn keine ID gegeben ist?
             }
         }
+        dataSet.aiModel?.let {
+            assignModelDataToDataSet(dataSetId = dataSetId, modelDataUri = it.uri)
+        }
+
         return dataSetId
+    }
+
+    override suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataUri: Uri) {
+        dao.insertDataSetToModelData(DBDataSetToModelData(dataSetId = dataSetId, modelDataUri = modelDataUri.toString()))
+    }
+
+    override suspend fun unassignModelDataFromDataSet(dataSetId: Long) {
+        dao.deleteDataSetToModelData(dataSetId)
     }
 
     override suspend fun addDataSeries(dataSeries: List<DataSeries>): List<Long> {
@@ -113,7 +128,7 @@ class DataRepositoryImpl @Inject constructor(
     private fun DataSet.toDBModel() : DBDataSet {
         val dbObject = DBDataSet(
             name = this.name,
-            description = this.description,
+            description = this.description
         )
         this.id?.let { dbObject.id = it }
         return dbObject
@@ -164,7 +179,8 @@ class DataRepositoryImpl @Inject constructor(
             id = this.dataSet.id,
             description = this.dataSet.description,
             name = this.dataSet.name,
-            columns = this.columns.map { it.toDomainModel() }
+            columns = this.columns.map { it.toDomainModel() },
+            aiModel = this.aiModel?.let { modelRepository.getModel(Uri.parse(it.uri)) }
         )
     }
 }

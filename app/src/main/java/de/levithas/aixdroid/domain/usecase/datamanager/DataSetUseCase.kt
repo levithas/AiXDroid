@@ -35,7 +35,8 @@ class DataSetUseCaseImpl @Inject constructor(
             id = dataSet.id,
             name = dataSet.name,
             description = dataSet.description,
-            columns = dataSet.columns + dataSeriesList
+            columns = dataSet.columns + dataSeriesList,
+            aiModel = dataSet.aiModel
         ))
     }
 
@@ -44,6 +45,7 @@ class DataSetUseCaseImpl @Inject constructor(
             id = dataSet.id,
             name = dataSet.name,
             description = dataSet.description,
+            aiModel = dataSet.aiModel,
             columns = dataSet.columns.filter { dataSeriesList.any { ds -> it.id != ds.id } }
         ))
     }

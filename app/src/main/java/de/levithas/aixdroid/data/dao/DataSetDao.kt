@@ -13,6 +13,7 @@ import de.levithas.aixdroid.data.model.data.DBDataSetToDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataSetWithDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataPoint
+import de.levithas.aixdroid.data.model.data.DBDataSetToModelData
 import de.levithas.aixdroid.domain.model.DataSeries
 import kotlinx.coroutines.flow.Flow
 
@@ -30,6 +31,9 @@ interface DataSetDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDataSetToDataSeries(dbDataSetToDataSeries: DBDataSetToDataSeries) : Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDataSetToModelData(dbDataSetToModelData: DBDataSetToModelData) : Long
 
     @Update(onConflict = OnConflictStrategy.ABORT)
     suspend fun updateDataSeries(dataSeries: DBDataSeries) : Int
@@ -76,6 +80,10 @@ interface DataSetDao {
     @Transaction
     @Query("SELECT * FROM dbdataset WHERE name == :name")
     fun getDataSetsByName(name: String) : Flow<List<DBDataSetWithDataSeries>>
+
+    @Transaction
+    @Query("DELETE FROM DBDataSetToModelData WHERE dataSetId == :dataSetId")
+    fun deleteDataSetToModelData(dataSetId: Long)
 
     @Transaction
     @Query("DELETE FROM DBDataSeries WHERE id == :id")

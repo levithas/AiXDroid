@@ -12,6 +12,7 @@ import de.levithas.aixdroid.data.model.ai.DBModelDataOutput
 import de.levithas.aixdroid.data.model.ai.DBTensorData
 import de.levithas.aixdroid.data.model.data.DBDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataPoint
+import de.levithas.aixdroid.data.model.data.DBDataSetToModelData
 
 @Database(entities = [
     DBModelData::class,
@@ -22,7 +23,8 @@ import de.levithas.aixdroid.data.model.data.DBDataPoint
     DBDataSet::class,
     DBDataSeries::class,
     DBDataPoint::class,
-    DBDataSetToDataSeries::class
+    DBDataSetToDataSeries::class,
+    DBDataSetToModelData::class
 
                      ], version = 1)
 abstract class AppDatabase : RoomDatabase() {

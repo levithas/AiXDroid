@@ -1,5 +1,6 @@
 package de.levithas.aixdroid.domain.repository
 
+import android.net.Uri
 import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import de.levithas.aixdroid.domain.model.DataPoint
@@ -23,6 +24,8 @@ interface DataRepository {
     suspend fun addDataPoints(dataPointList: List<DataPoint>, dataSeriesId: Long) : List<Long>
     suspend fun updateDataSet(dataSet: DataSet)
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
+    suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataUri: Uri)
+    suspend fun unassignModelDataFromDataSet(dataSetId: Long)
     suspend fun deleteDataSeries(id: Long)
     suspend fun deleteDataSet(id: Long)
 }
