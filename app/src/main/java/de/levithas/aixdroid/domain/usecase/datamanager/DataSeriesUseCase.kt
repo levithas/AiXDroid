@@ -18,6 +18,7 @@ import javax.inject.Inject
 interface DataSeriesUseCase {
     suspend fun importFromCSV(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit)
     suspend fun checkExistingDataSeriesNames(context: Context, uri: Uri) : Boolean
+    suspend fun addInferedDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long
     suspend fun deleteDataSeries(dataSeriesId: Long)
 }
 
@@ -30,6 +31,10 @@ class DataSeriesUseCaseImpl @Inject constructor(
     private val separatorSign = ','
 
     private var existingDataSeriesNameMap = emptyMap<String, DataSeries>()
+
+    override suspend fun addInferedDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long {
+        return 0
+    }
 
     override suspend fun importFromCSV(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit) {
         try {

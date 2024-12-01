@@ -61,6 +61,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import de.levithas.aixdroid.R
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
@@ -71,6 +72,7 @@ import de.levithas.aixdroid.presentation.theme.customColors
 import de.levithas.aixdroid.presentation.ui.datamanager.dialog.DataManagerDialogComposable
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelItem
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIViewModel
+import org.tensorflow.lite.schema.TensorType
 import java.util.Date
 import java.util.Locale
 
@@ -323,7 +325,7 @@ fun DataManagerWindow(
                     onSaveChanges = onSaveDataSet
                 )
 
-                DATA_SET_INFERENCE -> DataSetInferenceConfiguration(
+                DATA_SET_INFERENCE -> DataSetInferenceConfigurationView(
                     modifier = modifier,
                     dataSet = currentDataSet
                 )
@@ -774,15 +776,43 @@ fun DataSetDetails(
 }
 
 @Composable
-fun DataSetInferenceConfiguration(
-    modelViewModel: AIViewModel = hiltViewModel(),
+fun DataSetInferenceConfigurationView(
     modifier: Modifier,
-    dataSet: DataSet?
+    dataSet: DataSet?,
+    modelViewModel: AIViewModel = hiltViewModel()
+) {
+    val aiModelList by modelViewModel.allModels.collectAsState()
+    
+    DataSetInferenceConfiguration(
+        modifier = modifier,
+        dataSet = dataSet,
+        aiModelList = aiModelList,
+        onSetInferenceConfiguration = { }
+    )
+}
+
+@Composable
+fun DataSetInference(
+    modifier: Modifier,
+    dataSet: DataSet,
+    aiModelList: List<ModelData>,
+    onStartInference: () -> Unit
+) {
+    val filteredModelList = aiModelList.filter { model -> model.inputs.size == dataSet.columns.size }
+
+    val expandedDropdown by remember { mutableStateOf(-1) }
+
+
+}
+
+@Composable
+fun DataSetInferenceConfiguration(
+    modifier: Modifier,
+    dataSet: DataSet?,
+    aiModelList: List<ModelData>,
+    onSetInferenceConfiguration: () -> Unit,
 ) {
     dataSet?.let {
-
-        val aiModelList by modelViewModel.allModels.collectAsState()
-
         val filteredList = aiModelList.filter { entry -> entry.inputs.size == dataSet.columns.size }
 
         var expanded by remember { mutableStateOf(false) }
@@ -961,6 +991,43 @@ val dataSetPreviewItem = DataSet(
     )
 )
 
+val aiModelPreviewItem = ModelData(
+    uri = Uri.parse(""),
+    name = "",
+    description  = "",
+    version = "",
+    author = "",
+    licence = "",
+    inputs = listOf(
+        TensorData(
+            name = "heartrate",
+            description = "Heartrate in bpm",
+            type = TensorType.FLOAT32,
+            shape = listOf(2,1),
+            min = 0.0f,
+            max = 1.0f
+        ),
+        TensorData(
+            name = "temperature",
+            description = "Temperature of the skin",
+            type = TensorType.FLOAT32,
+            shape = listOf(2,1),
+            min = 0.0f,
+            max = 1.0f
+        )
+    ),
+    outputs = listOf(
+        TensorData(
+            name = "sleep level",
+            description = "Describes the current sleep stage with a value between 0.0 and 1.0.",
+            type = TensorType.FLOAT32,
+            shape = listOf(2,1),
+            min = 0.0f,
+            max = 1.0f
+        )
+    )
+)
+
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 @Composable
 fun Preview() {
@@ -1075,7 +1142,9 @@ fun DataSetInferenceConfigurationPreview() {
     AiXDroidTheme {
         DataSetInferenceConfiguration(
             modifier = Modifier,
-            dataSet = dataSetPreviewItem
+            dataSet = dataSetPreviewItem,
+            aiModelList = listOf(aiModelPreviewItem),
+            onSetInferenceConfiguration = {}
         )
     }
 }
