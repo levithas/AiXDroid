@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.domain.repository
+package de.levithas.aixdroid.data.repository
 
 import android.net.Uri
 import androidx.paging.PagingData
@@ -24,6 +24,8 @@ interface DataRepository {
     suspend fun addDataPoints(dataPointList: List<DataPoint>, dataSeriesId: Long) : List<Long>
     suspend fun updateDataSet(dataSet: DataSet)
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
+    suspend fun assignTensorDataToDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long, tensorDataId: Long)
+    suspend fun unassignTensorDataFromDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long)
     suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataUri: Uri)
     suspend fun unassignModelDataFromDataSet(dataSetId: Long)
     suspend fun deleteDataSeries(id: Long)

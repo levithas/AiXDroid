@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.domain.repository
+package de.levithas.aixdroid.data.repository
 
 import de.levithas.aixdroid.domain.model.ExternalIntentConfiguration
 

@@ -2,10 +2,11 @@ package de.levithas.aixdroid.domain.usecase.datamanager
 
 import android.content.Context
 import android.net.Uri
+import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
-import de.levithas.aixdroid.domain.repository.DataRepository
+import de.levithas.aixdroid.data.repository.DataRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -16,13 +17,14 @@ import java.util.Date
 import javax.inject.Inject
 
 interface DataSeriesUseCase {
-    suspend fun importFromCSV(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit)
-    suspend fun checkExistingDataSeriesNames(context: Context, uri: Uri) : Boolean
+    suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit)
+    suspend fun checkExistingDataSeriesNames(uri: Uri) : Boolean
     suspend fun addInferedDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long
     suspend fun deleteDataSeries(dataSeriesId: Long)
 }
 
 class DataSeriesUseCaseImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val dataRepository: DataRepository,
     private val dataSetUseCase: DataSetUseCase
 ) : DataSeriesUseCase {
@@ -36,7 +38,7 @@ class DataSeriesUseCaseImpl @Inject constructor(
         return 0
     }
 
-    override suspend fun importFromCSV(context: Context, uri: Uri, onProgressUpdate: (Float) -> Unit) {
+    override suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit) {
         try {
             val inputStream = context.contentResolver.openInputStream(uri)
             val inputStreamReader = InputStreamReader(inputStream)
@@ -116,7 +118,7 @@ class DataSeriesUseCaseImpl @Inject constructor(
         }
     }
 
-    override suspend fun checkExistingDataSeriesNames(context: Context, uri: Uri): Boolean {
+    override suspend fun checkExistingDataSeriesNames(uri: Uri): Boolean {
         val inputStream = context.contentResolver.openInputStream(uri)
         val inputStreamReader = InputStreamReader(inputStream)
         val bufferedReader = BufferedReader(inputStreamReader)

@@ -5,12 +5,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.collection.emptyObjectList
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -23,6 +25,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -40,6 +44,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -48,6 +53,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -56,12 +63,13 @@ import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusModifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import de.levithas.aixdroid.R
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
@@ -71,9 +79,11 @@ import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
 import de.levithas.aixdroid.presentation.ui.datamanager.dialog.DataManagerDialogComposable
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelItem
+import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelItemList
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIViewModel
 import org.tensorflow.lite.schema.TensorType
 import java.util.Date
+import java.util.Dictionary
 import java.util.Locale
 
 const val DATA_SET_LIST = 0
@@ -105,7 +115,6 @@ fun DataManagerComposable(
     }
 
     var currentTab by rememberSaveable { mutableIntStateOf(DATA_SET_LIST) }
-    
 
     var currentDataSeriesList by remember { mutableStateOf<List<DataSeries>>(listOf()) }
     val currentDataSet by viewModel.currentDataSet.collectAsState()
@@ -192,6 +201,13 @@ fun DataManagerComposable(
         },
         onOpenInferenceConfiguration = {
             currentTab = DATA_SET_INFERENCE
+        },
+        onSaveInferenceConfiguration = { dataSet, tensorMap ->
+            currentDataSet?.let {
+                viewModel.createUpdateDataSet(dataSet)
+                viewModel.assignTensorDataToDataSet(it, tensorMap)
+                currentTab = DATA_SET_DETAILS
+            }
         }
     )
 
@@ -235,7 +251,8 @@ fun DataManagerWindow(
     onCancelImport: () -> Unit,
     onSaveDataSet: (DataSet) -> Unit,
     onDissolveDataSet: () -> Unit,
-    onRemoveDataSeriesFromDataSet: () -> Unit
+    onRemoveDataSeriesFromDataSet: () -> Unit,
+    onSaveInferenceConfiguration: (DataSet, Map<Long, Long>) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -284,7 +301,7 @@ fun DataManagerWindow(
                         dataSetList = dataSetList,
                         dataSeriesWithoutDataSetList = dataSeriesList.filter { series ->
                             dataSetList.isEmpty() || dataSetList.none { dataSet ->
-                                dataSet.columns.any { it.id == series.id }
+                                dataSet.columns.any { it.key.id == series.id }
                             }
                         },
                         onOpenDataSetDetails = onOpenDataSetDetails,
@@ -325,10 +342,12 @@ fun DataManagerWindow(
                     onSaveChanges = onSaveDataSet
                 )
 
-                DATA_SET_INFERENCE -> DataSetInferenceConfigurationView(
+                DATA_SET_INFERENCE -> DataSetInferenceConfiguration(
                     modifier = modifier,
                     dataSet = currentDataSet
-                )
+                ) { dataSet, tensorList ->
+                    onSaveInferenceConfiguration(dataSet, tensorList)
+                }
             }
         }
     }
@@ -414,8 +433,9 @@ fun DataSetList(
                 DataSetItem(
                     dataSet = DataSet(
                         null, stringResource(R.string.data_manager_not_designated_data_series), "",
-                        columns = dataSeriesWithoutDataSetList,
+                        columns = dataSeriesWithoutDataSetList.associateBy(keySelector = { it }, valueTransform = { null }),
                         aiModel = null,
+                        autoPredict = false
                     ),
                     onOpenDataSetDetails = { onOpenRemainingDataSeries(dataSeriesWithoutDataSetList) },
                 )
@@ -601,7 +621,7 @@ fun DataSetCreation(
         ) {
             DataSeriesList(
                 modifier = Modifier.padding(8.dp),
-                dataSeriesList = (currentDataSet?.columns?: emptyList()) + (currentDataSeriesList),
+                dataSeriesList = (currentDataSet?.columns?.keys?.toList()?: emptyList()) + (currentDataSeriesList),
                 markedDataSeriesList = emptyList(),
                 onToggleDataSeriesMark = {}
             )
@@ -615,8 +635,9 @@ fun DataSetCreation(
                         id = currentDataSet?.id,
                         name = name,
                         description = description,
-                        columns = (currentDataSet?.columns?: emptyList()) + (currentDataSeriesList),
-                        aiModel = null
+                        columns = (currentDataSet?.columns?: emptyMap()) + currentDataSeriesList.associateBy(keySelector = { it }, valueTransform = { null }),
+                        aiModel = null,
+                        autoPredict = false
                     )
                 )
             },
@@ -680,7 +701,7 @@ fun DataSetDetails(
                 ) {
                     Text(style = MaterialTheme.typography.titleMedium, text = "Start Date:")
                     Spacer(Modifier.width(8.dp))
-                    Text(text = Date(dataSet.columns.minOf { it.startTime?.time ?: 0 }).toString())
+                    Text(text = Date(dataSet.columns.keys.minOf { it.startTime?.time ?: 0 }).toString())
                 }
                 Row(
                     modifier = Modifier
@@ -689,7 +710,7 @@ fun DataSetDetails(
                 ) {
                     Text(style = MaterialTheme.typography.titleMedium, text = "End Date:")
                     Spacer(Modifier.width(8.dp))
-                    Text(text = Date(dataSet.columns.maxOf { it.endTime?.time ?: 0 }).toString())
+                    Text(text = Date(dataSet.columns.keys.maxOf { it.endTime?.time ?: 0 }).toString())
                 }
                 Row(
                     modifier = Modifier
@@ -707,17 +728,46 @@ fun DataSetDetails(
                 ) {
                     Text(style = MaterialTheme.typography.titleMedium, text = "Total Data Count:")
                     Spacer(Modifier.width(8.dp))
-                    Text(text = dataSet.columns.sumOf { it.count ?: 0 }.toString())
+                    Text(text = dataSet.columns.keys.sumOf { it.count ?: 0 }.toString())
                 }
-                dataSet.aiModel?.name?.let {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                dataSet.aiModel?.let {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     ) {
-                        Text(style = MaterialTheme.typography.titleMedium, text = "AI-Model URI: ")
-                        Spacer(Modifier.width(8.dp))
-                        Text(text = it)
+                        Row(
+                            modifier = Modifier
+                        ) {
+                            Text(style = MaterialTheme.typography.titleMedium, text = "AI-Model: ")
+                            Spacer(Modifier.width(8.dp))
+                            Text(text = it.name)
+                        }
+
+                        // List of connected features
+                        LazyColumn {
+                            item {
+                                Row(Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+                                    TableCell(text = "InputTensor", weight = .5f)
+                                    TableCell(text = "DataSeries", weight = .5f)
+                                }
+                            }
+
+                            items(dataSet.columns.keys.toList()) { dataSeries ->
+                                dataSet.columns[dataSeries]?.let {
+                                    Row(Modifier.fillMaxWidth()) {
+                                        TableCell(text = it.name, weight = .5f)
+                                        TableCell(text = dataSeries.name, weight = .5f)
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier
+                        ) {
+                            Text(style = MaterialTheme.typography.titleMedium, text = "Auto-Prediction: ")
+                            Spacer(Modifier.width(8.dp))
+                            Text(text = if (dataSet.autoPredict) "Activated" else "Deactivated")
+                        }
                     }
                 }
             }
@@ -743,7 +793,7 @@ fun DataSetDetails(
                 }
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { onOpenDataSetSeriesList(dataSet.columns) }
+                    onClick = { onOpenDataSetSeriesList(dataSet.columns.keys.toList()) }
                 ) {
                     Text("Show Features")
                 }
@@ -775,162 +825,235 @@ fun DataSetDetails(
     }
 }
 
+
 @Composable
-fun DataSetInferenceConfigurationView(
-    modifier: Modifier,
-    dataSet: DataSet?,
-    modelViewModel: AIViewModel = hiltViewModel()
+fun RowScope.TableCell(
+    text: String,
+    weight: Float
 ) {
-    val aiModelList by modelViewModel.allModels.collectAsState()
-    
-    DataSetInferenceConfiguration(
-        modifier = modifier,
-        dataSet = dataSet,
-        aiModelList = aiModelList,
-        onSetInferenceConfiguration = { }
+    Text(
+        text = text,
+        Modifier.border(1.dp, Color.Black)
+            .weight(weight)
+            .padding(8.dp)
     )
 }
 
 @Composable
-fun DataSetInference(
+fun DataSetInferenceSelectModel(
     modifier: Modifier,
-    dataSet: DataSet,
-    aiModelList: List<ModelData>,
-    onStartInference: () -> Unit
+    modelList: List<ModelData>,
+    onModelSelected: (ModelData) -> Unit,
 ) {
-    val filteredModelList = aiModelList.filter { model -> model.inputs.size == dataSet.columns.size }
-
-    val expandedDropdown by remember { mutableStateOf(-1) }
-
-
+    // A List of all available Models
+    // Click on a Model selects the model
+    AIModelItemList(
+        modifier = modifier,
+        modelList = modelList,
+        onOpenDetails = onModelSelected
+    )
 }
 
 @Composable
-fun DataSetInferenceConfiguration(
-    modifier: Modifier,
-    dataSet: DataSet?,
-    aiModelList: List<ModelData>,
-    onSetInferenceConfiguration: () -> Unit,
+fun DataSetInferenceFeatureItem(
+    dataSeriesItem: DataSeries,
+    onSelectDataSeries: (Long) -> Unit,
 ) {
-    dataSet?.let {
-        val filteredList = aiModelList.filter { entry -> entry.inputs.size == dataSet.columns.size }
-
-        var expanded by remember { mutableStateOf(false) }
-        var selectedIndex by remember { mutableStateOf(0) }
-
-        Column(
-            modifier = modifier
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.CenterHorizontally,
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 76.dp)
+            .padding(8.dp)
+            .clickable {
+                dataSeriesItem.id?.let { onSelectDataSeries(it) }
+            },
+        colors = MaterialTheme.customColors.dataSetItemCard,
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
         ) {
-            Box(modifier = Modifier.fillMaxSize()
-                .wrapContentSize(Alignment.TopStart)
+            Column(
+                modifier = Modifier,
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                if (filteredList.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        // Der Button, der das Dropdown öffnet, mit einem Pfeil
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                                .clickable(onClick = { expanded = !expanded })
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), shape = MaterialTheme.shapes.medium),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = filteredList[selectedIndex].name,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            Icon(
-                                imageVector = if (expanded) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                contentDescription = if (expanded) "Collapse" else "Expand",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        // Dropdown-Menü
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp)
-                                .background(MaterialTheme.colorScheme.surface)
-                        ) {
-                            filteredList.forEachIndexed { index, element ->
-                                DropdownMenuItem(
-                                    onClick = {
-                                        selectedIndex = index
-                                        expanded = false
-                                    },
-                                    modifier = Modifier.padding(8.dp),
-                                    text = {
-                                        Text(
-                                            text = element.name,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                        Row(
-                            modifier = Modifier,
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            LazyColumn {
-                                items(dataSet.columns) { item ->
-                                    DataSeriesItem(
-                                        modifier = Modifier,
-                                        dataSeriesItem = item,
-                                        showMarker = false,
-                                        isMarked = false,
-                                        onCheckedChanged = {}
-                                    )
-                                }
-                            }
-                            LazyColumn {
-                                items(filteredList[selectedIndex].inputs) { item ->
-                                    TensorDataItem(
-                                        modifier = Modifier,
-                                        tensorData = item
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                } else {
-                    Text(
-                        text = "No compatible Models available!",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.error)
-                    )
-                }
+                Text(
+                    modifier = Modifier,
+                    style = MaterialTheme.typography.titleMedium,
+                    text = dataSeriesItem.name
+                )
+                Text(
+                    modifier = Modifier,
+                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Data Size: " + dataSeriesItem.count
+                )
             }
         }
     }
 }
 
 @Composable
-fun TensorDataItem(
+fun DataSetInferenceSelectFeatures(
     modifier: Modifier,
-    tensorData: TensorData
+    currentModelTensor: TensorData,
+    featureList: List<DataSeries>,
+    onDataSeriesSelected: (Long) -> Unit
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth()
+    Column(
+        modifier = modifier
     ) {
-        Text(modifier = Modifier.padding(8.dp), text = tensorData.name)
+
+        Text(
+            modifier = Modifier,
+            style = MaterialTheme.typography.titleMedium,
+            text = "Select a dataSeries for this feature:"
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+            TableCell(text = "Feature", weight = .4f)
+            TableCell(text = "Datatype", weight = .6f)
+        }
+        Row(Modifier.fillMaxWidth()) {
+            TableCell(text = currentModelTensor.name, weight = .4f)
+            TableCell(text = TensorType.name(currentModelTensor.type.toInt()), weight = .6f)
+        }
+        Spacer(Modifier.height(16.dp))
+        LazyColumn {
+            items(featureList) { feature ->
+                DataSetInferenceFeatureItem(dataSeriesItem = feature) { selectedDataSeries ->
+                    onDataSeriesSelected(selectedDataSeries)
+                }
+            }
+        }
+    }
+
+    // A List of all Features of the dataset
+    // Click on the feature selects it for the current Model Input Number
+}
+
+@Composable
+fun DataSetInferenceDefinePredictionConfiguration(
+    modifier: Modifier = Modifier,
+    onSaveConfiguration: (Boolean, DataSeries) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var unit by remember { mutableStateOf("") }
+    var enableAutoPrediction by remember { mutableStateOf(false) }
+
+    val isSaveEnabled = name.isNotBlank() && unit.isNotBlank()
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Input for DataSeries name
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Input for unit
+        OutlinedTextField(
+            value = unit,
+            onValueChange = { unit = it },
+            label = { Text("Unit") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Checkbox for Enable Auto Prediction
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = enableAutoPrediction,
+                onCheckedChange = { enableAutoPrediction = it }
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Auto Prediction on Changes")
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Save button
+        Button(
+            onClick = {
+                if (isSaveEnabled) {
+                    val dataSeries = DataSeries(
+                        id = null,
+                        origin = "Predicted",
+                        name = name,
+                        unit = unit,
+                        count = null,
+                        startTime = null,
+                        endTime = null
+                    )
+                    onSaveConfiguration(enableAutoPrediction, dataSeries)
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isSaveEnabled
+        ) {
+            Text("Save Configuration")
+        }
     }
 }
 
+const val INFERENCE_CONFIGURATION_SELECT_MODEL = 0
+const val INFERENCE_CONFIGURATION_SELECT_FEATURES = 1
+const val INFERENCE_CONFIGURATION_FINISH_CONFIG = 2
+
+@Composable
+fun DataSetInferenceConfiguration(
+    modelViewModel: AIViewModel = hiltViewModel(),
+    modifier: Modifier,
+    dataSet: DataSet?,
+    onSaveConfiguration: (DataSet, Map<Long, Long>) -> Unit
+) {
+    dataSet?.let {
+        val aiModelList by modelViewModel.allModels.collectAsState()
+        var currentStep by remember { mutableStateOf(INFERENCE_CONFIGURATION_SELECT_MODEL) }
+
+        var selectedModel by remember { mutableStateOf(ModelData()) }
+        var selectedFeatureList by rememberSaveable { mutableStateOf<Map<Long, Long>>(emptyMap()) }
+
+        when (currentStep) {
+            INFERENCE_CONFIGURATION_SELECT_MODEL -> DataSetInferenceSelectModel(
+                modifier = modifier,
+                modelList = aiModelList.filter { model -> dataSet.columns.size >= model.inputs.size },
+            ) { modelData ->
+                selectedModel = modelData
+                currentStep = INFERENCE_CONFIGURATION_SELECT_FEATURES
+            }
+            INFERENCE_CONFIGURATION_SELECT_FEATURES -> DataSetInferenceSelectFeatures(
+                modifier = modifier,
+                featureList = dataSet.columns.keys.toList().filter { feature -> selectedFeatureList[feature.id] == null },
+                currentModelTensor = selectedModel.inputs[selectedFeatureList.size]
+            ) { dataSeriesId ->
+                selectedModel.inputs[selectedFeatureList.size].id?.let {
+                    selectedFeatureList = mapOf(Pair(it, dataSeriesId)) + selectedFeatureList
+                }
+                
+                if (selectedFeatureList.size == selectedModel.inputs.size) {
+                    currentStep = INFERENCE_CONFIGURATION_FINISH_CONFIG
+                }
+            }
+            INFERENCE_CONFIGURATION_FINISH_CONFIG -> DataSetInferenceDefinePredictionConfiguration(
+                modifier = modifier,
+            ) { autoPredict, dataSeries ->
+                dataSet.aiModel = selectedModel
+                dataSet.autoPredict = autoPredict
+
+                onSaveConfiguration(dataSet, selectedFeatureList)
+            }
+        }
+    }
+}
 
 @Composable
 fun DataSeriesImportLoading(
@@ -984,48 +1107,12 @@ val dataSetPreviewItem = DataSet(
     id = 0,
     name = "Schlafdaten",
     description = "Dieser Datensatz enthält alle Daten, die von der BangleJS empfangen wurden.",
-    columns = dataSeriesPreviewList.drop(1),
+    columns = dataSeriesPreviewList.drop(1).associateBy(keySelector = { it }, valueTransform = { null }),
     aiModel = ModelData(
         uri = Uri.parse("Blablabla/Pfad"),
-        name = "Dolles Modell"
-    )
-)
-
-val aiModelPreviewItem = ModelData(
-    uri = Uri.parse(""),
-    name = "",
-    description  = "",
-    version = "",
-    author = "",
-    licence = "",
-    inputs = listOf(
-        TensorData(
-            name = "heartrate",
-            description = "Heartrate in bpm",
-            type = TensorType.FLOAT32,
-            shape = listOf(2,1),
-            min = 0.0f,
-            max = 1.0f
-        ),
-        TensorData(
-            name = "temperature",
-            description = "Temperature of the skin",
-            type = TensorType.FLOAT32,
-            shape = listOf(2,1),
-            min = 0.0f,
-            max = 1.0f
-        )
+        name = "Dolles Modell",
     ),
-    outputs = listOf(
-        TensorData(
-            name = "sleep level",
-            description = "Describes the current sleep stage with a value between 0.0 and 1.0.",
-            type = TensorType.FLOAT32,
-            shape = listOf(2,1),
-            min = 0.0f,
-            max = 1.0f
-        )
-    )
+    autoPredict = false
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
@@ -1054,7 +1141,8 @@ fun Preview() {
             onDissolveDataSet = {},
             onEditDataSet = {},
             onRemoveDataSeriesFromDataSet = {},
-            onOpenInferenceConfiguration = {}
+            onOpenInferenceConfiguration = {},
+            onSaveInferenceConfiguration = {_, _ -> }
         )
     }
 }
@@ -1140,11 +1228,19 @@ fun DataSetCreationPreview() {
 @Composable
 fun DataSetInferenceConfigurationPreview() {
     AiXDroidTheme {
-        DataSetInferenceConfiguration(
+        DataSetInferenceSelectFeatures(
             modifier = Modifier,
-            dataSet = dataSetPreviewItem,
-            aiModelList = listOf(aiModelPreviewItem),
-            onSetInferenceConfiguration = {}
+            currentModelTensor = TensorData(
+                id = 0,
+                name = "heartrate",
+                description = "Die Rate des herzes und sowas keine Ahnung",
+                type = TensorType.FLOAT32,
+                shape = listOf(1, 5),
+                min = 0.0f,
+                max = 1.0f
+            ),
+            featureList = dataSeriesPreviewList,
+            onDataSeriesSelected = {},
         )
     }
 }

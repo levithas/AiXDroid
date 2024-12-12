@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.domain.repository
+package de.levithas.aixdroid.data.repository
 
 import android.net.Uri
 import de.levithas.aixdroid.data.dao.ModelDataDao
@@ -33,6 +33,7 @@ fun DBModelWithTensors.toDomainModel() : ModelData {
 
 fun DBTensorData.toDomainModel() : TensorData {
     return TensorData(
+        id = this.id,
         name = this.name,
         description = this.description,
         type = this.type,

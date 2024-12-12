@@ -5,6 +5,8 @@ import androidx.room.Junction
 import androidx.room.Relation
 import de.levithas.aixdroid.data.model.ai.DBModelData
 import de.levithas.aixdroid.data.model.ai.DBModelWithTensors
+import de.levithas.aixdroid.data.model.ai.DBTensorData
+import de.levithas.aixdroid.domain.model.TensorData
 
 data class DBDataSetWithDataSeries(
     @Embedded val dataSet: DBDataSet,
@@ -16,9 +18,9 @@ data class DBDataSetWithDataSeries(
     )
     val columns: List<DBDataSeries> = emptyList(),
     @Relation(
-        associateBy = Junction(DBDataSetToModelData::class, parentColumn = "dataSetId", entityColumn = "modelDataUri"),
+        associateBy = Junction(DBDataSetToDataSeries::class, parentColumn = "dataSetId", entityColumn = "tensorDataId"),
         parentColumn = "id",
-        entityColumn = "uri"
+        entityColumn = "id"
     )
-    val aiModel: DBModelData? = null
+    val tensors: List<DBTensorData?> = emptyList()
 )

@@ -4,7 +4,7 @@ import android.content.Context
 import android.net.Uri
 import de.levithas.aixdroid.domain.model.ModelData
 import de.levithas.aixdroid.domain.model.TensorData
-import de.levithas.aixdroid.domain.repository.ModelRepository
+import de.levithas.aixdroid.data.repository.ModelRepository
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.metadata.MetadataExtractor
 import java.io.ByteArrayOutputStream
@@ -37,6 +37,7 @@ class AddNewAIModelUseCaseImpl @Inject constructor(
             for (idx in 0..<extractor.inputTensorCount) {
                 inputList.add(
                     TensorData(
+                        id = null,
                         name = extractor.getInputTensorMetadata(idx)?.name()?: "",
                         description = extractor.getInputTensorMetadata(idx)?.description()?: "",
                         type = extractor.getInputTensorType(idx),
@@ -49,6 +50,7 @@ class AddNewAIModelUseCaseImpl @Inject constructor(
             for (idx in 0..<extractor.outputTensorCount) {
                 outputList.add(
                     TensorData(
+                        id = null,
                         name = extractor.getOutputTensorMetadata(idx)?.name()?: "",
                         description = extractor.getOutputTensorMetadata(idx)?.description()?: "",
                         type = extractor.getOutputTensorType(idx),

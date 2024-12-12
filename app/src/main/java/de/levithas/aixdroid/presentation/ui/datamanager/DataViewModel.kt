@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
+import de.levithas.aixdroid.domain.model.TensorData
 import de.levithas.aixdroid.domain.usecase.datamanager.GetDataListsUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSetUseCase
@@ -33,7 +34,6 @@ enum class ImportDataMergeDecision {
 
 @HiltViewModel
 class DataViewModel @Inject constructor(
-    @ApplicationContext private val applicationContext: Context,
     private val getDataListsUseCase: GetDataListsUseCase,
     private val dataSeriesUseCase: DataSeriesUseCase,
     private val dataSetUseCase: DataSetUseCase
@@ -115,7 +115,7 @@ class DataViewModel @Inject constructor(
             _importProgress.value = 0.0f
 
             try {
-                if (dataSeriesUseCase.checkExistingDataSeriesNames(applicationContext, uri)) {
+                if (dataSeriesUseCase.checkExistingDataSeriesNames(uri)) {
                     _importDataMergeDecision.value = ImportDataMergeDecision.ON_REQUEST
 
                     // Wait for UI to make a decision
@@ -132,7 +132,7 @@ class DataViewModel @Inject constructor(
                     }
                 }
 
-                dataSeriesUseCase.importFromCSV(applicationContext, uri) { progress ->
+                dataSeriesUseCase.importFromCSV(uri) { progress ->
                     _importProgress.value = progress
                 }
             } catch (e: CancellationException) {
@@ -154,6 +154,14 @@ class DataViewModel @Inject constructor(
                 dataSetUseCase.createDataSet(dataSet)
             } else {
                 dataSetUseCase.updateDataSet(dataSet)
+            }
+        }
+    }
+
+    fun assignTensorDataToDataSet(dataSet: DataSet, tensorDataMap: Map<Long, Long>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataSet.id?.let {
+                dataSetUseCase.assignTensorDataList(dataSet, tensorDataMap)
             }
         }
     }

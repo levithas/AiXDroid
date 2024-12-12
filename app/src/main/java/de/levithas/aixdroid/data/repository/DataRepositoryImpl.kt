@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.domain.repository
+package de.levithas.aixdroid.data.repository
 
 import android.net.Uri
 import androidx.lifecycle.LiveData
@@ -13,7 +13,6 @@ import de.levithas.aixdroid.data.model.data.DBDataSetToDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataSetWithDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataSeries
 import de.levithas.aixdroid.data.model.data.DBDataPoint
-import de.levithas.aixdroid.data.model.data.DBDataSetToModelData
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
@@ -54,24 +53,41 @@ class DataRepositoryImpl @Inject constructor(
     override suspend fun addDataSet(dataSet: DataSet) : Long {
         val dataSetId = dao.insertDataSet(dataSet.toDBModel())
         if (dataSet.columns.isNotEmpty()) {
-            dataSet.columns.forEach { dataSeries ->
-                dataSeries.id?.let { dao.insertDataSetToDataSeries(DBDataSetToDataSeries(dataSetId = dataSetId, dataSeriesId = it)) }
+            dataSet.columns.forEach { (dataSeries, tensorData) ->
+                dataSeries.id?.let { dao.insertDataSetToDataSeries(DBDataSetToDataSeries(
+                    dataSetId = dataSetId,
+                    dataSeriesId = it,
+                    tensorDataId = tensorData?.id
+                )) }
                 // TODO: Serie hinzufügen, wenn keine ID gegeben ist?
             }
-        }
-        dataSet.aiModel?.let {
-            assignModelDataToDataSet(dataSetId = dataSetId, modelDataUri = it.uri)
         }
 
         return dataSetId
     }
 
+    override suspend fun assignTensorDataToDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long, tensorDataId: Long) {
+        dao.updateDataSetToDataSeries(DBDataSetToDataSeries(dataSetId = dataSetId, dataSeriesId = dataSeriesId, tensorDataId = tensorDataId))
+    }
+
+    override suspend fun unassignTensorDataFromDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long) {
+        dao.updateDataSetToDataSeries(DBDataSetToDataSeries(dataSetId = dataSetId, dataSeriesId = dataSeriesId, tensorDataId = null))
+    }
+
     override suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataUri: Uri) {
-        dao.insertDataSetToModelData(DBDataSetToModelData(dataSetId = dataSetId, modelDataUri = modelDataUri.toString()))
+        val dataSet = getDataSet(dataSetId)
+        dataSet?.let {
+            dataSet.aiModel = modelRepository.getModel(modelDataUri)
+            updateDataSet(dataSet)
+        }
     }
 
     override suspend fun unassignModelDataFromDataSet(dataSetId: Long) {
-        dao.deleteDataSetToModelData(dataSetId)
+        val dataSet = getDataSet(dataSetId)
+        dataSet?.let {
+            dataSet.aiModel = null
+            updateDataSet(dataSet)
+        }
     }
 
     override suspend fun addDataSeries(dataSeries: List<DataSeries>): List<Long> {
@@ -128,7 +144,9 @@ class DataRepositoryImpl @Inject constructor(
     private fun DataSet.toDBModel() : DBDataSet {
         val dbObject = DBDataSet(
             name = this.name,
-            description = this.description
+            description = this.description,
+            predictionModelUri = this.aiModel?.uri.toString(),
+            autoPredict = this.autoPredict
         )
         this.id?.let { dbObject.id = it }
         return dbObject
@@ -175,12 +193,18 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     private suspend fun DBDataSetWithDataSeries.toDomainModel() : DataSet {
+        val tensorDataMap = this.tensors.associate { tensor -> tensor?.id to tensor?.toDomainModel()}
+        val dataSeriesList = this.columns.map { ds -> ds.toDomainModel() }
+
         return DataSet(
             id = this.dataSet.id,
             description = this.dataSet.description,
             name = this.dataSet.name,
-            columns = this.columns.map { it.toDomainModel() },
-            aiModel = this.aiModel?.let { modelRepository.getModel(Uri.parse(it.uri)) }
+            columns = dataSeriesList.associateWith { dataSeries: DataSeries ->
+                tensorDataMap[dataSeries.id]
+            },
+            aiModel = this.dataSet.predictionModelUri?.let { modelRepository.getModel(Uri.parse(it)) },
+            autoPredict = false
         )
     }
 }

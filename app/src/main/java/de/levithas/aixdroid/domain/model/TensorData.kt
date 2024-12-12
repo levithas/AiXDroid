@@ -1,11 +1,11 @@
 package de.levithas.aixdroid.domain.model
 
-import org.tensorflow.lite.schema.TensorType
 
 data class TensorData(
-    val name: String,
-    val description: String,
-    val type: Byte,
+    var id: Long?,
+    var name: String,
+    var description: String,
+    var type: Byte,
     val shape: List<Int>,
     val min: Float,
     val max: Float
