@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "c852a24ffb694c5ff394c5cfb52d9b71",
+    "identityHash": "27cdba313425df2c2290825bd5a7ccc9",
     "entities": [
       {
         "tableName": "model_data",
@@ -212,7 +212,7 @@
       },
       {
         "tableName": "DBDataSet",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `predictionModelUri` TEXT, `autoPredict` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
         "fields": [
           {
             "fieldPath": "name",
@@ -224,6 +224,18 @@
             "fieldPath": "description",
             "columnName": "description",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "predictionModelUri",
+            "columnName": "predictionModelUri",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "autoPredict",
+            "columnName": "autoPredict",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -345,7 +357,7 @@
       },
       {
         "tableName": "DBDataSetToDataSeries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataSetId` INTEGER NOT NULL, `dataSeriesId` INTEGER NOT NULL, PRIMARY KEY(`dataSetId`, `dataSeriesId`), FOREIGN KEY(`dataSetId`) REFERENCES `DBDataSet`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`dataSeriesId`) REFERENCES `DBDataSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataSetId` INTEGER NOT NULL, `dataSeriesId` INTEGER NOT NULL, `tensorDataId` INTEGER, PRIMARY KEY(`dataSetId`, `dataSeriesId`), FOREIGN KEY(`dataSetId`) REFERENCES `DBDataSet`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`dataSeriesId`) REFERENCES `DBDataSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "dataSetId",
@@ -358,6 +370,12 @@
             "columnName": "dataSeriesId",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "tensorDataId",
+            "columnName": "tensorDataId",
+            "affinity": "INTEGER",
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -392,50 +410,12 @@
             ]
           }
         ]
-      },
-      {
-        "tableName": "DBDataSetToModelData",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataSetId` INTEGER NOT NULL, `modelDataUri` TEXT NOT NULL, PRIMARY KEY(`dataSetId`), FOREIGN KEY(`dataSetId`) REFERENCES `DBDataSet`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        "fields": [
-          {
-            "fieldPath": "dataSetId",
-            "columnName": "dataSetId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "modelDataUri",
-            "columnName": "modelDataUri",
-            "affinity": "TEXT",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "dataSetId"
-          ]
-        },
-        "indices": [],
-        "foreignKeys": [
-          {
-            "table": "DBDataSet",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "dataSetId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c852a24ffb694c5ff394c5cfb52d9b71')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '27cdba313425df2c2290825bd5a7ccc9')"
     ]
   }
 }

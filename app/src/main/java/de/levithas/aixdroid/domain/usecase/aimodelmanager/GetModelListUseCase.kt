@@ -1,7 +1,7 @@
 package de.levithas.aixdroid.domain.usecase.aimodelmanager
 
 import de.levithas.aixdroid.domain.model.ModelData
-import de.levithas.aixdroid.domain.repository.ModelRepository
+import de.levithas.aixdroid.data.repository.ModelRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

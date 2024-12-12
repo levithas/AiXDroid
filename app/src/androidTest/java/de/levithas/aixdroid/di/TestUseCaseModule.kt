@@ -4,7 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import de.levithas.aixdroid.domain.repository.ModelRepository
+import de.levithas.aixdroid.data.repository.ModelRepository
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.AddNewAIModelUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.AddNewAIModelUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCase

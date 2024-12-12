@@ -22,5 +22,7 @@ import androidx.room.ForeignKey
 )
 data class DBDataSetToDataSeries(
     val dataSetId: Long,
-    val dataSeriesId: Long
+    val dataSeriesId: Long,
+
+    val tensorDataId: Long?
 )

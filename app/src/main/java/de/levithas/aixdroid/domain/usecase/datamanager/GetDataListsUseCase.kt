@@ -2,7 +2,7 @@ package de.levithas.aixdroid.domain.usecase.datamanager
 
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
-import de.levithas.aixdroid.domain.repository.DataRepository
+import de.levithas.aixdroid.data.repository.DataRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

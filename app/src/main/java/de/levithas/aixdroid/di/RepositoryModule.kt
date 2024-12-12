@@ -1,20 +1,28 @@
 package de.levithas.aixdroid.di
 
+import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.levithas.aixdroid.data.dao.DataSetDao
 import de.levithas.aixdroid.data.dao.ModelDataDao
-import de.levithas.aixdroid.domain.repository.DataRepository
-import de.levithas.aixdroid.domain.repository.DataRepositoryImpl
-import de.levithas.aixdroid.domain.repository.ModelRepository
-import de.levithas.aixdroid.domain.repository.ModelRepositoryImpl
+import de.levithas.aixdroid.data.repository.DataRepository
+import de.levithas.aixdroid.data.repository.DataRepositoryImpl
+import de.levithas.aixdroid.data.repository.ModelRepository
+import de.levithas.aixdroid.data.repository.ModelRepositoryImpl
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+
+    @Singleton
+    @Provides
+    fun provideContext(@ApplicationContext context: Context): Context {
+        return context
+    }
 
     @Provides
     @Singleton

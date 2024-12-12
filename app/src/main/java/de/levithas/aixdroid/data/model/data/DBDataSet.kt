@@ -9,6 +9,9 @@ import de.levithas.aixdroid.data.model.ai.DBModelData
 data class DBDataSet(
     val name: String,
     val description: String,
+
+    val predictionModelUri: String?,
+    val autoPredict: Boolean,
 ) {
     @PrimaryKey(autoGenerate = true) var id: Long = 0
 }

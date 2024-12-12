@@ -198,8 +198,6 @@ fun AIModelItemList(
     modelList: List<ModelData>,
     onOpenDetails: (ModelData) -> Unit
 ) {
-    Text("Willkommen im AI Model Manager!")
-
     LazyColumn(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -457,6 +455,7 @@ val modelConfigurationPreview = ModelData(
     licence = "MIT Licence",
     inputs = arrayOf(
         TensorData(
+            id = 5,
             name = "Nachricht",
             description = "Enthält die Nachricht die du an das Modell schicken willst",
             type = TensorType.STRING,
@@ -465,6 +464,7 @@ val modelConfigurationPreview = ModelData(
             max = 1.0f,
         ),
         TensorData(
+            id = 1,
             name = "Herzfrequenz",
             description = "Dein Herzschlag, damit das Modell weiß, dass du Angst hast!",
             type = TensorType.FLOAT32,
@@ -475,6 +475,7 @@ val modelConfigurationPreview = ModelData(
     ).toList(),
     outputs = arrayOf(
         TensorData(
+            id = 2,
             name = "Antwort",
             description = "Enthält die Nachricht des Modells an dich",
             type = TensorType.STRING,
@@ -483,6 +484,7 @@ val modelConfigurationPreview = ModelData(
             max = 1.0f,
         ),
         TensorData(
+            id = 32,
             name = "Zerstörungsthreshold",
             description = "Der Wert gibt an, wie sehr das Modell die Welt vernichten möchte (0 = garnicht, 1 = sofort)",
             type = TensorType.FLOAT32,

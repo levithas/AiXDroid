@@ -1,10 +1,12 @@
 package de.levithas.aixdroid.di
 
+import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import de.levithas.aixdroid.domain.repository.DataRepository
+import de.levithas.aixdroid.data.repository.DataRepository
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSetUseCase
@@ -13,7 +15,6 @@ import de.levithas.aixdroid.domain.usecase.datamanager.ExportDataUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.ExportDataUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.datamanager.GetDataListsUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.GetDataListsUseCaseImpl
-
 
 
 @Module
@@ -36,9 +37,11 @@ object DataManagerUseCaseModule {
 
     @Provides
     fun provideDataSeriesUseCase(
+        context: Context,
         repository: DataRepository
     ): DataSeriesUseCase {
         return DataSeriesUseCaseImpl(
+            context,
             repository,
             DataSetUseCaseImpl(repository)
         )
