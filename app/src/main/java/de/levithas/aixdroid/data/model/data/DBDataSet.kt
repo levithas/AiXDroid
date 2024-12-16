@@ -9,7 +9,7 @@ import de.levithas.aixdroid.data.model.ai.DBModelData
     foreignKeys = [
         ForeignKey(
           entity = DBModelData::class,
-            parentColumns = arrayOf("id"),
+            parentColumns = arrayOf("uri"),
             childColumns = arrayOf("predictionModelUri"),
             onDelete = ForeignKey.SET_NULL
         ),

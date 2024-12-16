@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "27cdba313425df2c2290825bd5a7ccc9",
+    "identityHash": "d4765f1d385ba3bf61552c4edcc20f47",
     "entities": [
       {
         "tableName": "model_data",
@@ -212,7 +212,7 @@
       },
       {
         "tableName": "DBDataSet",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `predictionModelUri` TEXT, `autoPredict` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `predictionModelUri` TEXT, `autoPredict` INTEGER NOT NULL, `predictionDataSeriesId` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, FOREIGN KEY(`predictionModelUri`) REFERENCES `model_data`(`uri`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`predictionDataSeriesId`) REFERENCES `DBDataSeries`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "name",
@@ -239,6 +239,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "predictionDataSeriesId",
+            "columnName": "predictionDataSeriesId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
@@ -252,7 +258,30 @@
           ]
         },
         "indices": [],
-        "foreignKeys": []
+        "foreignKeys": [
+          {
+            "table": "model_data",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "predictionModelUri"
+            ],
+            "referencedColumns": [
+              "uri"
+            ]
+          },
+          {
+            "table": "DBDataSeries",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "predictionDataSeriesId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       },
       {
         "tableName": "DBDataSeries",
@@ -415,7 +444,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '27cdba313425df2c2290825bd5a7ccc9')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd4765f1d385ba3bf61552c4edcc20f47')"
     ]
   }
 }
