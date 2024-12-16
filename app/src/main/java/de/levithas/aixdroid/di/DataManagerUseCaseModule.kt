@@ -7,6 +7,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.levithas.aixdroid.data.repository.DataRepository
+import de.levithas.aixdroid.data.repository.ModelRepository
+import de.levithas.aixdroid.domain.usecase.aimodelmanager.AIModelUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
@@ -59,12 +61,16 @@ object DataManagerUseCaseModule {
     @Provides
     fun providesInferenceUseCase(
         context: Context,
-        dataRepository: DataRepository
+        dataRepository: DataRepository,
+        modelRepository: ModelRepository
     ): InferenceDataUseCase {
-        return InferenceDataUseCaseImpl(context, DataSeriesUseCaseImpl(
-            context,
-            dataRepository,
-            DataSetUseCaseImpl(dataRepository)
-        ))
+        return InferenceDataUseCaseImpl(
+            context, DataSeriesUseCaseImpl(
+                context,
+                dataRepository,
+                DataSetUseCaseImpl(dataRepository)
+            ),
+            AIModelUseCaseImpl(modelRepository)
+        )
     }
 }

@@ -4,15 +4,11 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.ModelData
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.AddNewAIModelUseCase
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCase
+import de.levithas.aixdroid.domain.usecase.aimodelmanager.AIModelUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelListUseCase
-import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,9 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AIViewModel @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
-    private val addNewAIModelUseCase: AddNewAIModelUseCase,
+    private val aiModelUseCase: AIModelUseCase,
     private val getModelListUseCase: GetModelListUseCase,
-    private val deleteModelUseCase: DeleteModelUseCase,
 ) : ViewModel() {
 
     private val _allModels = MutableStateFlow<List<ModelData>>(emptyList())
@@ -44,13 +39,13 @@ class AIViewModel @Inject constructor(
 
     fun addDataModel(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
-            addNewAIModelUseCase(applicationContext, uri)
+            aiModelUseCase.addNewModel(applicationContext, uri)
         }
     }
 
-    fun deleteDataModel(uri: Uri) {
+    fun deleteDataModel(fileName: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            deleteModelUseCase.invoke(uri)
+            aiModelUseCase.deleteModel(applicationContext, fileName)
             fetchAllDataModels()
         }
     }

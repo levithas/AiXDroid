@@ -5,14 +5,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.levithas.aixdroid.data.repository.ModelRepository
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.AddNewAIModelUseCase
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.AddNewAIModelUseCaseImpl
+import de.levithas.aixdroid.domain.usecase.aimodelmanager.AIModelUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCase
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.DeleteModelUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelByIdUseCase
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelByIdUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelListUseCase
-import de.levithas.aixdroid.domain.usecase.aimodelmanager.GetModelListUseCaseImpl
 
 
 @Module
@@ -22,7 +18,7 @@ object TestUseCaseModule {
     @Provides
     fun provideAddNewAIModelUseCase(
         repository: ModelRepository
-    ): AddNewAIModelUseCase {
+    ): AIModelUseCase {
         TODO("")
     }
 

@@ -1047,7 +1047,7 @@ fun DataSetInferenceConfiguration(
         val aiModelList by modelViewModel.allModels.collectAsState()
         var currentStep by remember { mutableStateOf(INFERENCE_CONFIGURATION_SELECT_MODEL) }
 
-        var selectedModel by remember { mutableStateOf(ModelData()) }
+        var selectedModel by remember { mutableStateOf(ModelData("")) }
         var selectedFeatureList by rememberSaveable { mutableStateOf<Map<Long, Long>>(emptyMap()) }
 
         when (currentStep) {
@@ -1140,7 +1140,7 @@ val dataSetPreviewItem = DataSet(
     description = "Dieser Datensatz enthält alle Daten, die von der BangleJS empfangen wurden.",
     columns = dataSeriesPreviewList.drop(1).associateBy(keySelector = { it }, valueTransform = { null }),
     aiModel = ModelData(
-        uri = Uri.parse("Blablabla/Pfad"),
+        fileName = "Blablabla/Pfad",
         name = "Dolles Modell",
     ),
     autoPredict = false,

@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "model_data")
 data class DBModelData(
-    @PrimaryKey val uri: String,
+    @PrimaryKey val fileName: String,
     val name: String,
     val description: String,
     val version: String,

@@ -78,10 +78,10 @@ class DataRepositoryImpl @Inject constructor(
         dao.updateDataSetToDataSeries(DBDataSetToDataSeries(dataSetId = dataSetId, dataSeriesId = dataSeriesId, tensorDataId = null))
     }
 
-    override suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataUri: Uri) {
+    override suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataFileName: String) {
         val dataSet = getDataSet(dataSetId)
         dataSet?.let {
-            dataSet.aiModel = modelRepository.getModel(modelDataUri)
+            dataSet.aiModel = modelRepository.getModel(modelDataFileName)
             updateDataSet(dataSet)
         }
     }
@@ -141,7 +141,7 @@ class DataRepositoryImpl @Inject constructor(
         val dbObject = DBDataSet(
             name = this.name,
             description = this.description,
-            predictionModelUri = this.aiModel?.uri.toString(),
+            predictionModelFileName = this.aiModel?.fileName,
             autoPredict = this.autoPredict,
             predictionDataSeriesId = this.predictionSeries?.id
         )
@@ -201,7 +201,7 @@ class DataRepositoryImpl @Inject constructor(
                 tensorDataMap[dataSeries.id]
             },
             predictionSeries = this.dataSet.predictionDataSeriesId?.let { dao.getDataSeriesById(it)?.toDomainModel() },
-            aiModel = this.dataSet.predictionModelUri?.let { modelRepository.getModel(Uri.parse(it)) },
+            aiModel = this.dataSet.predictionModelFileName?.let { modelRepository.getModel(it) },
             autoPredict = false
         )
     }

@@ -82,10 +82,10 @@ fun AIModelManagerComposable(
         modifier = modifier,
         modelList = modelList,
         onAddNewDataModel = {
-            uri -> viewModel.addDataModel(uri)
+            fileName -> viewModel.addDataModel(fileName)
         },
         onDeleteDataModel = {
-            uri -> viewModel.deleteDataModel(uri)
+            fileName -> viewModel.deleteDataModel(fileName)
         }
     )
 }
@@ -95,7 +95,7 @@ fun AIModelWindow(
     modifier: Modifier,
     modelList: List<ModelData>,
     onAddNewDataModel: (Uri) -> Unit,
-    onDeleteDataModel: (Uri) -> Unit,
+    onDeleteDataModel: (String) -> Unit,
 ) {
     var currentTab by rememberSaveable { mutableIntStateOf(TAB_OVERVIEW) }
 
@@ -110,7 +110,7 @@ fun AIModelWindow(
         }
     }
 
-    var modelData by remember { mutableStateOf(ModelData()) }
+    var modelData by remember { mutableStateOf(ModelData(fileName = "")) }
 
     when (currentTab) {
         TAB_OVERVIEW -> AIModelOverview(
@@ -135,7 +135,7 @@ fun AIModelWindow(
     if (showDeleteItemDialog) {
         AIModelDeleteItemDialog(
             modifier = Modifier,
-            modelUri = modelData.uri,
+            modelFileName = modelData.fileName,
             onDismiss = { showDeleteItemDialog = false },
             onDeleteModel = { uri ->
                 showDeleteItemDialog = false
@@ -254,7 +254,7 @@ fun AIModelDetailScreen(
     modifier: Modifier,
     modelData: ModelData,
     onBackToOverview: () -> Unit,
-    onDeleteModelRequested: (Uri) -> Unit
+    onDeleteModelRequested: (String) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -309,9 +309,9 @@ fun AIModelDetailScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     ) {
-                        Text(style = MaterialTheme.typography.titleMedium, text = "URI:")
+                        Text(style = MaterialTheme.typography.titleMedium, text = "Filename:")
                         Spacer(Modifier.width(8.dp))
-                        Text(text = modelData.uri.toString())
+                        Text(text = modelData.fileName)
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
@@ -350,7 +350,7 @@ fun AIModelDetailScreen(
             Button(
                 modifier = modifier.fillMaxWidth().padding(16.dp),
                 onClick = {
-                    onDeleteModelRequested(modelData.uri)
+                    onDeleteModelRequested(modelData.fileName)
                 }
             ) {
                 Text("Delete Model")
@@ -405,8 +405,8 @@ fun TensorTable(
 @Composable
 fun AIModelDeleteItemDialog(
     modifier: Modifier,
-    modelUri: Uri,
-    onDeleteModel: (Uri) -> Unit,
+    modelFileName: String,
+    onDeleteModel: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
     BasicAlertDialog(
@@ -428,7 +428,7 @@ fun AIModelDeleteItemDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     TextButton(
-                        onClick = { onDeleteModel(modelUri) }
+                        onClick = { onDeleteModel(modelFileName) }
                     ) {
                         Text("DELETE", style = MaterialTheme.typography.headlineMedium)
                     }
@@ -446,7 +446,7 @@ fun AIModelDeleteItemDialog(
 
 val modelConfigurationPreview = ModelData(
 
-    uri = Uri.parse("/pfad/zu/modell/TestModel.tflite"),
+    fileName = "/pfad/zu/modell/TestModel.tflite",
 
     name = "TestModel",
     description = "Hier steht eine echt tolle Beschreibung zu diesem Modell. Das hier ist nämlich die Ultimative KI, die die Weltherschaft an sich reißen wird!",
@@ -531,7 +531,7 @@ fun AIModelEditScreenPreview() {
 fun AIModelDeleteDialogPreview() {
     AIModelDeleteItemDialog(
         Modifier,
-        modelConfigurationPreview.uri,
+        modelConfigurationPreview.fileName,
         {},
         {}
     )

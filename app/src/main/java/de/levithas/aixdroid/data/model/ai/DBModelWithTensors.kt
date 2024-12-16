@@ -7,13 +7,13 @@ import androidx.room.Relation
 data class DBModelWithTensors(
     @Embedded val modelData: DBModelData,
     @Relation(
-        parentColumn = "uri",
+        parentColumn = "fileName",
         entityColumn = "id",
         associateBy = Junction(DBModelDataInput::class)
     )
     val inputs: List<DBTensorData> = emptyList(),
     @Relation(
-        parentColumn = "uri",
+        parentColumn = "fileName",
         entityColumn = "id",
         associateBy = Junction(DBModelDataOutput::class)
     )

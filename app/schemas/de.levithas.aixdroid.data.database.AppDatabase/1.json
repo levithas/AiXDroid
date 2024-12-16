@@ -2,15 +2,15 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "d4765f1d385ba3bf61552c4edcc20f47",
+    "identityHash": "f5c5f60cacf76230c375e20bb55ca573",
     "entities": [
       {
         "tableName": "model_data",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `version` TEXT NOT NULL, `author` TEXT NOT NULL, `licence` TEXT NOT NULL, PRIMARY KEY(`uri`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileName` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `version` TEXT NOT NULL, `author` TEXT NOT NULL, `licence` TEXT NOT NULL, PRIMARY KEY(`fileName`))",
         "fields": [
           {
-            "fieldPath": "uri",
-            "columnName": "uri",
+            "fieldPath": "fileName",
+            "columnName": "fileName",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -48,7 +48,7 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "uri"
+            "fileName"
           ]
         },
         "indices": [],
@@ -112,11 +112,11 @@
       },
       {
         "tableName": "DBModelDataInput",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `id` INTEGER NOT NULL, PRIMARY KEY(`uri`, `id`), FOREIGN KEY(`uri`) REFERENCES `model_data`(`uri`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`id`) REFERENCES `tensor`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileName` TEXT NOT NULL, `id` INTEGER NOT NULL, PRIMARY KEY(`fileName`, `id`), FOREIGN KEY(`fileName`) REFERENCES `model_data`(`fileName`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`id`) REFERENCES `tensor`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
-            "fieldPath": "uri",
-            "columnName": "uri",
+            "fieldPath": "fileName",
+            "columnName": "fileName",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -130,7 +130,7 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "uri",
+            "fileName",
             "id"
           ]
         },
@@ -141,10 +141,10 @@
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
-              "uri"
+              "fileName"
             ],
             "referencedColumns": [
-              "uri"
+              "fileName"
             ]
           },
           {
@@ -162,11 +162,11 @@
       },
       {
         "tableName": "DBModelDataOutput",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`uri` TEXT NOT NULL, `id` INTEGER NOT NULL, PRIMARY KEY(`uri`, `id`), FOREIGN KEY(`uri`) REFERENCES `model_data`(`uri`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`id`) REFERENCES `tensor`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileName` TEXT NOT NULL, `id` INTEGER NOT NULL, PRIMARY KEY(`fileName`, `id`), FOREIGN KEY(`fileName`) REFERENCES `model_data`(`fileName`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`id`) REFERENCES `tensor`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
-            "fieldPath": "uri",
-            "columnName": "uri",
+            "fieldPath": "fileName",
+            "columnName": "fileName",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -180,7 +180,7 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "uri",
+            "fileName",
             "id"
           ]
         },
@@ -191,10 +191,10 @@
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
-              "uri"
+              "fileName"
             ],
             "referencedColumns": [
-              "uri"
+              "fileName"
             ]
           },
           {
@@ -212,7 +212,7 @@
       },
       {
         "tableName": "DBDataSet",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `predictionModelUri` TEXT, `autoPredict` INTEGER NOT NULL, `predictionDataSeriesId` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, FOREIGN KEY(`predictionModelUri`) REFERENCES `model_data`(`uri`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`predictionDataSeriesId`) REFERENCES `DBDataSeries`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `description` TEXT NOT NULL, `predictionModelFileName` TEXT, `autoPredict` INTEGER NOT NULL, `predictionDataSeriesId` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
         "fields": [
           {
             "fieldPath": "name",
@@ -227,8 +227,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "predictionModelUri",
-            "columnName": "predictionModelUri",
+            "fieldPath": "predictionModelFileName",
+            "columnName": "predictionModelFileName",
             "affinity": "TEXT",
             "notNull": false
           },
@@ -258,30 +258,7 @@
           ]
         },
         "indices": [],
-        "foreignKeys": [
-          {
-            "table": "model_data",
-            "onDelete": "SET NULL",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "predictionModelUri"
-            ],
-            "referencedColumns": [
-              "uri"
-            ]
-          },
-          {
-            "table": "DBDataSeries",
-            "onDelete": "SET NULL",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "predictionDataSeriesId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
+        "foreignKeys": []
       },
       {
         "tableName": "DBDataSeries",
@@ -444,7 +421,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd4765f1d385ba3bf61552c4edcc20f47')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f5c5f60cacf76230c375e20bb55ca573')"
     ]
   }
 }

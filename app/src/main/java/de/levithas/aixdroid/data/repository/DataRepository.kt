@@ -27,7 +27,7 @@ interface DataRepository {
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
     suspend fun assignTensorDataToDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long, tensorDataId: Long)
     suspend fun unassignTensorDataFromDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long)
-    suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataUri: Uri)
+    suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataFileName: String)
     suspend fun unassignModelDataFromDataSet(dataSetId: Long)
     suspend fun deleteDataSeries(id: Long)
     suspend fun deleteDataSet(id: Long)

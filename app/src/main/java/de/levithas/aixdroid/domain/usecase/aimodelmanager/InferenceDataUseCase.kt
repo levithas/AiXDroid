@@ -22,16 +22,18 @@ interface InferenceDataUseCase {
 
 class InferenceDataUseCaseImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val dataSeriesUseCase: DataSeriesUseCase
+    private val dataSeriesUseCase: DataSeriesUseCase,
+    private val aiModelUseCase: AIModelUseCase
 ) : InferenceDataUseCase {
 
     private val inferenceBufferSize = 10000
     private val predictionBufferSize = 1000
 
     override suspend fun startInference(dataSet: DataSet, onProgressUpdate: (Float) -> Unit) {
-        dataSet.aiModel?.uri?.let {
-            loadInterpreter(context, it)?.let { interpreter ->
-
+        dataSet.aiModel?.fileName?.let { fileName ->
+            aiModelUseCase.openModelFile(context, fileName)?.let { fileContent ->
+                Interpreter(fileContent)
+            }?.let { interpreter ->
                 dataSet.predictionSeries?.let { predictionSeries ->
                     val startTime = predictionSeries.startTime?: Date(0)
                     val endTime = predictionSeries.endTime?:Date(Long.MAX_VALUE)
@@ -42,6 +44,7 @@ class InferenceDataUseCaseImpl @Inject constructor(
 
                     while(continueLoop) {
                         for (series in dataSet.columns) {
+                            // TODO: inferenceBufferSize has to be controlled by the model batch size
                             dataSeriesUseCase.getDataPointsFromDataSeries(series.key, currentStartTime, inferenceBufferSize)?.let { dataPointList ->
                                 if (dataPointList.isNotEmpty()) {
                                     featureList.add(dataPointList)
@@ -53,9 +56,6 @@ class InferenceDataUseCaseImpl @Inject constructor(
                             val featureMap = transformToMap(featureList)
 
                             if (featureMap.isNotEmpty()) {
-
-                                // TODO: Slice featureMap into chunks the size of the models input batch!!!
-
                                 inferenceOnDataPointMap(interpreter, featureMap).let { predictedData ->
                                     predictionList.add(DataPoint(
                                         time = Date(predictedData.first),
@@ -113,28 +113,5 @@ class InferenceDataUseCaseImpl @Inject constructor(
 
     private suspend fun savePredictionDataSeries(predictionSeries: DataSeries, predictedDataPointList: List<DataPoint>) {
         predictionSeries.id?.let { dataSeriesUseCase.addDataPoints(it, predictedDataPointList) }
-    }
-
-    private fun loadInterpreter(context: Context, uri: Uri) : Interpreter? {
-        try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                inputStream.let {
-                    val buffer = ByteArray(1024)
-                    val baos = ByteArrayOutputStream()
-                    while(inputStream.read(buffer) != -1) {
-                        baos.write(buffer)
-                    }
-
-                    val byteBuffer: ByteBuffer = MappedByteBuffer.allocateDirect(baos.size())
-                    byteBuffer.put(baos.toByteArray())
-                    byteBuffer.order(ByteOrder.nativeOrder())
-
-                    return Interpreter(byteBuffer)
-                }
-            }
-        } catch (e: Exception) {
-            e.message?.let { error(it) }
-        }
-        return null
     }
 }

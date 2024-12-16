@@ -1,6 +1,5 @@
 package de.levithas.aixdroid.data.repository
 
-import android.net.Uri
 import de.levithas.aixdroid.data.dao.ModelDataDao
 import de.levithas.aixdroid.data.model.ai.DBModelData
 import de.levithas.aixdroid.data.model.ai.DBModelDataInput
@@ -15,7 +14,7 @@ import javax.inject.Inject
 
 fun DBModelWithTensors.toDomainModel() : ModelData {
     return ModelData(
-        uri = Uri.parse(this.modelData.uri),
+        fileName = this.modelData.fileName,
         name = this.modelData.name,
         description = this.modelData.description,
         version = this.modelData.version,
@@ -48,7 +47,7 @@ fun DBTensorData.toDomainModel() : TensorData {
 
 fun ModelData.toDBModel(): DBModelData {
     return DBModelData(
-        uri = this.uri.toString(),
+        fileName = this.fileName,
         name = this.name,
         description = this.description,
         version = this.version,
@@ -80,24 +79,24 @@ class ModelRepositoryImpl @Inject constructor(
             val tensorId = dao.insertTensorData(input.toDBModel())
             dao.insertModelDataInput(
                 DBModelDataInput(
-                uri = dbModel.uri,
+                fileName = dbModel.fileName,
                 id = tensorId
-            )
+                )
             )
         }
         for (output in model.outputs) {
             val tensorId = dao.insertTensorData(output.toDBModel())
             dao.insertModelDataOutput(
                 DBModelDataOutput(
-                uri = dbModel.uri,
+                fileName = dbModel.fileName,
                 id = tensorId
             )
             )
         }
     }
 
-    override suspend fun getModel(uri: Uri): ModelData? {
-        return dao.getModelByPath(uri.toString())?.toDomainModel()
+    override suspend fun getModel(fileName: String): ModelData? {
+        return dao.getModelByPath(fileName)?.toDomainModel()
     }
 
     override suspend fun getModelsByName(name: String): Flow<List<ModelData>> {
@@ -112,7 +111,7 @@ class ModelRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteModel(uri: Uri) {
-        dao.deleteModel(uri.toString())
+    override suspend fun deleteModel(fileName: String) {
+        dao.deleteModel(fileName)
     }
 }

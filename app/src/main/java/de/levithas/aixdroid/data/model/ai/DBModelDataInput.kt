@@ -4,12 +4,12 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 
 @Entity(
-    primaryKeys = ["uri", "id"],
+    primaryKeys = ["fileName", "id"],
     foreignKeys = [
         ForeignKey(
             entity = DBModelData::class,
-            parentColumns = ["uri"],
-            childColumns = ["uri"],
+            parentColumns = ["fileName"],
+            childColumns = ["fileName"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
@@ -21,7 +21,7 @@ import androidx.room.ForeignKey
     ]
 )
 data class DBModelDataInput(
-    val uri: String,
+    val fileName: String,
     val id: Long
 )
 

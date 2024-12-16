@@ -28,8 +28,8 @@ interface ModelDataDao {
     suspend fun insertModelDataOutput(modelDataOutput: DBModelDataOutput) : Long
 
     @Transaction
-    @Query("SELECT * FROM model_data WHERE uri == :uri")
-    fun getModelByPath(uri: String) : DBModelWithTensors?
+    @Query("SELECT * FROM model_data WHERE fileName == :fileName")
+    fun getModelByPath(fileName: String) : DBModelWithTensors?
 
     @Transaction
     @Query("SELECT * FROM model_data WHERE name == :name")
@@ -40,6 +40,6 @@ interface ModelDataDao {
     fun getAllModels(): Flow<List<DBModelWithTensors>>
 
     @Transaction
-    @Query("DELETE FROM model_data WHERE uri == :uri")
-    fun deleteModel(uri: String)
+    @Query("DELETE FROM model_data WHERE fileName == :fileName")
+    fun deleteModel(fileName: String)
 }
