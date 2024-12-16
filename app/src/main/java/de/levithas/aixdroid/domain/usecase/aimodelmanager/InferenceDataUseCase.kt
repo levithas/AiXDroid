@@ -11,6 +11,7 @@ import org.tensorflow.lite.Interpreter
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.nio.MappedByteBuffer
 import java.util.Date
 import javax.inject.Inject
@@ -50,13 +51,23 @@ class InferenceDataUseCaseImpl @Inject constructor(
 
                         if (featureList.isNotEmpty()) {
                             val featureMap = transformToMap(featureList)
-                            val predictedData = inferenceOnDataPointMap(interpreter, featureMap)
-                            predictionList.add(DataPoint(
-                                time = Date(predictedData.first),
-                                value = predictedData.second
-                            ))
-                            if (predictionList.size > predictionBufferSize) {
-                                savePredictionDataSeries(predictionSeries, predictionList)
+
+                            if (featureMap.isNotEmpty()) {
+
+                                // TODO: Slice featureMap into chunks the size of the models input batch!!!
+
+                                inferenceOnDataPointMap(interpreter, featureMap).let { predictedData ->
+                                    predictionList.add(DataPoint(
+                                        time = Date(predictedData.first),
+                                        value = predictedData.second
+                                    ))
+                                }
+
+                                if (predictionList.size > predictionBufferSize) {
+                                    savePredictionDataSeries(predictionSeries, predictionList)
+                                }
+                            } else {
+
                             }
 
                             onProgressUpdate( (currentStartTime.time - startTime.time)/(endTime.time - startTime.time).toFloat())
@@ -78,23 +89,27 @@ class InferenceDataUseCaseImpl @Inject constructor(
         return dataPointLists
             .flatten()
             .groupBy { it.time.time }
+            .filter { (_, dataPoints) -> dataPoints.size == dataPointLists.size } // Incomplete Datapoints are discarded
             .mapValues { (_, dataPoints) ->
                 dataPoints.map { it.value }.toTypedArray()
             }
     }
 
 
+    private fun transformToInputVector(dataPointMap: Map<Long, Array<Float>>) : Array<FloatBuffer> {
+        return dataPointMap.map { (time, features) -> FloatBuffer.wrap(floatArrayOf(time.toFloat()) + features.toFloatArray()) }
+            .toTypedArray()
+    }
+
     // Hinweis: Keine Seq2Seq-Modelle! Es wird nur der letzte Zeitstempel ausgegeben
     private fun inferenceOnDataPointMap(interpreter: Interpreter, dataPointMap: Map<Long, Array<Float>>) : Pair<Long, Float> {
 
-
-
-        val inputVector = Array(1) { Array(50) { Array(2) { 0.0f } } }
-        val outputVector = Array(1) { Array(50) { Array(1) { 0.0f } } }
+        val inputVector = transformToInputVector(dataPointMap)
+        val outputVector = floatArrayOf()
 
         interpreter.run(inputVector, outputVector)
 
-        return Pair(0, 0.0f)
+        return Pair(dataPointMap.maxOf { it.key }, outputVector.last())
     }
 
 
