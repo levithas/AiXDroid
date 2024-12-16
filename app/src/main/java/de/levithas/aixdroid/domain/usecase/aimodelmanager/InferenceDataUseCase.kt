@@ -66,8 +66,6 @@ class InferenceDataUseCaseImpl @Inject constructor(
                                 if (predictionList.size > predictionBufferSize) {
                                     savePredictionDataSeries(predictionSeries, predictionList)
                                 }
-                            } else {
-
                             }
 
                             onProgressUpdate( (currentStartTime.time - startTime.time)/(endTime.time - startTime.time).toFloat())
