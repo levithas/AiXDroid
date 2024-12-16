@@ -15,7 +15,8 @@ interface DataRepository {
     suspend fun getAllDataSeriesWithName(name: String): List<DataSeries>
     suspend fun getDataSet(id: Long) : DataSet?
     suspend fun getDataSetsByName(name: String) : Flow<List<DataSet>>
-    suspend fun getDataPointsByDataSeriesId(id: Long) : Flow<PagingData<DataPoint>>
+    suspend fun getDataPointsByDataSeriesId(id: Long, minTime: Long, count: Int) : List<DataPoint>
+    suspend fun getDataSeries(id: Long) : DataSeries?
     suspend fun getDataPointCountByDataSeriesId(id: Long) : Long
     suspend fun getDataPointMaxTimeByDataSeriesId(id: Long): Long
     suspend fun getDataPointMinTimeByDataSeriesId(id: Long): Long

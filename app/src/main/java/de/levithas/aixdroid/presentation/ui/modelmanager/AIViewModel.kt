@@ -25,17 +25,10 @@ class AIViewModel @Inject constructor(
     private val addNewAIModelUseCase: AddNewAIModelUseCase,
     private val getModelListUseCase: GetModelListUseCase,
     private val deleteModelUseCase: DeleteModelUseCase,
-    private val dataSeriesUseCase: DataSeriesUseCase
 ) : ViewModel() {
 
     private val _allModels = MutableStateFlow<List<ModelData>>(emptyList())
     val allModels: StateFlow<List<ModelData>> get() = _allModels
-
-    private val _isInfering = MutableStateFlow(false)
-    val isInfering: StateFlow<Boolean> get() = _isInfering
-
-    private val _inferenceProgress = MutableStateFlow(0.0f)
-    val inferenceProgress: StateFlow<Float> get() = _inferenceProgress
 
     init {
         fetchAllDataModels()
@@ -46,12 +39,6 @@ class AIViewModel @Inject constructor(
             getModelListUseCase.invoke().collect { list ->
                 _allModels.value = list
             }
-        }
-    }
-
-    fun startInference(uri: Uri) {
-        viewModelScope.launch(Dispatchers.IO) {
-
         }
     }
 

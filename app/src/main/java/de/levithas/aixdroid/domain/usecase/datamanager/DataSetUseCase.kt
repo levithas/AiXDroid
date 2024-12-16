@@ -12,7 +12,7 @@ interface DataSetUseCase {
     suspend fun createDataSet(dataSet: DataSet) : Long
     suspend fun getDataSetById(dataSetId: Long) : DataSet?
     suspend fun updateDataSet(dataSet: DataSet)
-    suspend fun addDataSeriesToDataSet(dataSet: DataSet, dataSeriesList: List<DataSeries>)
+    suspend fun addDataSeriesToDataSet(dataSetId: Long, dataSeriesList: List<DataSeries>)
     suspend fun assignTensorDataList(dataSet: DataSet, tensorDataList: Map<Long, Long>)
     suspend fun removeDataSeriesFromDataSet(dataSet: DataSet, dataSeriesList: List<DataSeries>)
     suspend fun dissolveDataSet(dataSetId: Long)
@@ -33,15 +33,19 @@ class DataSetUseCaseImpl @Inject constructor(
         dataRepository.updateDataSet(dataSet)
     }
 
-    override suspend fun addDataSeriesToDataSet(dataSet: DataSet, dataSeriesList: List<DataSeries>) {
-        dataRepository.updateDataSet(DataSet(
-            id = dataSet.id,
-            name = dataSet.name,
-            description = dataSet.description,
-            columns = dataSet.columns + dataSeriesList.associateBy(keySelector = { it }, valueTransform = { null }),
-            aiModel = dataSet.aiModel,
-            autoPredict = dataSet.autoPredict
-        ))
+    override suspend fun addDataSeriesToDataSet(dataSetId: Long, dataSeriesList: List<DataSeries>) {
+        val dataSet = dataRepository.getDataSet(dataSetId)
+        dataSet?.let {
+            dataRepository.updateDataSet(DataSet(
+                id = dataSet.id,
+                name = dataSet.name,
+                description = dataSet.description,
+                columns = dataSet.columns + dataSeriesList.associateBy(keySelector = { it }, valueTransform = { null }),
+                predictionSeries = dataSet.predictionSeries,
+                aiModel = dataSet.aiModel,
+                autoPredict = dataSet.autoPredict
+            ))
+        }
     }
 
     override suspend fun assignTensorDataList(dataSet: DataSet, tensorDataList: Map<Long, Long>) {
@@ -59,6 +63,7 @@ class DataSetUseCaseImpl @Inject constructor(
             description = dataSet.description,
             aiModel = dataSet.aiModel,
             columns = dataSet.columns.filter { dataSeriesList.any { ds -> it.key.id != ds.id } },
+            predictionSeries = dataSet.predictionSeries,
             autoPredict = dataSet.autoPredict
         ))
     }

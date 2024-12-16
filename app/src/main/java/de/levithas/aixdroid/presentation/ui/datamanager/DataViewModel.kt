@@ -11,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import de.levithas.aixdroid.domain.model.TensorData
+import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.GetDataListsUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSetUseCase
@@ -36,7 +37,8 @@ enum class ImportDataMergeDecision {
 class DataViewModel @Inject constructor(
     private val getDataListsUseCase: GetDataListsUseCase,
     private val dataSeriesUseCase: DataSeriesUseCase,
-    private val dataSetUseCase: DataSetUseCase
+    private val dataSetUseCase: DataSetUseCase,
+    private val inferenceDataUseCase: InferenceDataUseCase
 ) : ViewModel() {
 
     private val _allDataSets = MutableStateFlow<List<DataSet>>(emptyList())
@@ -47,6 +49,12 @@ class DataViewModel @Inject constructor(
 
     private val _markedDataSeriesList = mutableStateListOf<DataSeries>()
     val markedDataSeriesList get() = _markedDataSeriesList
+
+    private val _isInfering = MutableStateFlow(false)
+    val isInfering: StateFlow<Boolean> get() = _isInfering
+
+    private val _inferenceProgress = MutableStateFlow(0.0f)
+    val inferenceProgress: StateFlow<Float> get() = _inferenceProgress
 
     fun clearMarkedDataSeriesList() {
         _markedDataSeriesList.clear()
@@ -83,6 +91,7 @@ class DataViewModel @Inject constructor(
     val importDataMergeDecision: StateFlow<ImportDataMergeDecision> get() = _importDataMergeDecision
 
     private var importJob: Job? = null
+    private var inferenceJob: Job? = null
 
     init {
         fetchDataSeriesList()
@@ -148,6 +157,24 @@ class DataViewModel @Inject constructor(
         importJob?.cancel()
     }
 
+    fun addPredictionDataSeriesToDataSet(dataSet: DataSet, dataSeries: DataSeries) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataSeries.id = dataSeriesUseCase.addDataSeries(dataSeries)
+            dataSet.predictionSeries = dataSeries
+            dataSetUseCase.updateDataSet(dataSet)
+        }
+    }
+
+    fun createUpdateDataSeries(dataSeries: DataSeries) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (dataSeries.id == null) {
+                dataSeriesUseCase.addDataSeries(dataSeries)
+            } else {
+                dataSeriesUseCase.updateDataSeries(dataSeries)
+            }
+        }
+    }
+
     fun createUpdateDataSet(dataSet: DataSet) {
         viewModelScope.launch(Dispatchers.IO) {
             if (dataSet.id == null) {
@@ -188,5 +215,26 @@ class DataViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             dataSeriesIdList.forEach { dataSeriesUseCase.deleteDataSeries(it) }
         }
+    }
+
+    fun startInference(dataSet: DataSet) {
+        inferenceJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _isInfering.value = true
+                _inferenceProgress.value = 0.0f
+
+                inferenceDataUseCase.startInference(dataSet) { progress ->
+                    _inferenceProgress.value = progress
+                }
+            } catch (e: CancellationException) {
+                Log.w("Data Inference", "Data inference was canceled: " + e.message)
+            } finally {
+                _isInfering.value = false
+            }
+        }
+    }
+
+    fun cancelInference() {
+        inferenceJob?.cancel()
     }
 }

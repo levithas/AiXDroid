@@ -38,6 +38,10 @@ class DataRepositoryImpl @Inject constructor(
         return dao.getDataSetById(id)?.toDomainModel()
     }
 
+    override suspend fun getDataSeries(id: Long): DataSeries? {
+        return dao.getDataSeriesById(id)?.toDomainModel()
+    }
+
     override suspend fun getDataSetsByName(name: String): Flow<List<DataSet>> {
         return dao.getDataSetsByName(name).map { flow -> flow.map { it.toDomainModel() }}
     }
@@ -101,16 +105,8 @@ class DataRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDataPointsByDataSeriesId(id: Long) : Flow<PagingData<DataPoint>> {
-        return Pager(
-            config = PagingConfig(
-                pageSize = 20,
-                enablePlaceholders = false
-            ),
-            pagingSourceFactory = { dao.getDataPointsByDataSeriesId(id) }
-        ).flow.map { pagingData ->
-            pagingData.map { dbDataPoint -> dbDataPoint.toDomainModel() }
-        }
+    override suspend fun getDataPointsByDataSeriesId(id: Long, minTime: Long, count: Int) : List<DataPoint> {
+        return dao.getDataPointsInRange(id, minTime, count).map { it.toDomainModel() }
     }
 
     override suspend fun getDataPointCountByDataSeriesId(id: Long): Long {
@@ -146,7 +142,8 @@ class DataRepositoryImpl @Inject constructor(
             name = this.name,
             description = this.description,
             predictionModelUri = this.aiModel?.uri.toString(),
-            autoPredict = this.autoPredict
+            autoPredict = this.autoPredict,
+            predictionDataSeriesId = this.predictionSeries?.id
         )
         this.id?.let { dbObject.id = it }
         return dbObject
@@ -203,6 +200,7 @@ class DataRepositoryImpl @Inject constructor(
             columns = dataSeriesList.associateWith { dataSeries: DataSeries ->
                 tensorDataMap[dataSeries.id]
             },
+            predictionSeries = this.dataSet.predictionDataSeriesId?.let { dao.getDataSeriesById(it)?.toDomainModel() },
             aiModel = this.dataSet.predictionModelUri?.let { modelRepository.getModel(Uri.parse(it)) },
             autoPredict = false
         )

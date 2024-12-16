@@ -6,6 +6,7 @@ data class DataSet(
     var name: String,
     var description: String,
     val columns: Map<DataSeries, TensorData?>,
+    var predictionSeries: DataSeries?,
     var aiModel: ModelData?,
     var autoPredict: Boolean
 )

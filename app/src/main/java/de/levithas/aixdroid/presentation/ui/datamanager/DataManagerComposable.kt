@@ -3,13 +3,11 @@ package de.levithas.aixdroid.presentation.ui.datamanager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.collection.emptyObjectList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -20,25 +18,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,8 +43,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,11 +50,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -78,12 +64,10 @@ import de.levithas.aixdroid.domain.model.TensorData
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
 import de.levithas.aixdroid.presentation.ui.datamanager.dialog.DataManagerDialogComposable
-import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelItem
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelItemList
 import de.levithas.aixdroid.presentation.ui.modelmanager.AIViewModel
 import org.tensorflow.lite.schema.TensorType
 import java.util.Date
-import java.util.Dictionary
 import java.util.Locale
 
 const val DATA_SET_LIST = 0
@@ -118,6 +102,9 @@ fun DataManagerComposable(
 
     var currentDataSeriesList by remember { mutableStateOf<List<DataSeries>>(listOf()) }
     val currentDataSet by viewModel.currentDataSet.collectAsState()
+
+    val isInfering by viewModel.isInfering.collectAsState()
+    val inferenceProgress by viewModel.inferenceProgress.collectAsState()
 
 
     DataManagerWindow(
@@ -208,7 +195,23 @@ fun DataManagerComposable(
                 viewModel.assignTensorDataToDataSet(it, tensorMap)
                 currentTab = DATA_SET_DETAILS
             }
-        }
+        },
+        onCreateInferenceSeries = { dataSeries ->
+            currentDataSet?.let {
+                it.predictionSeries?.let { predictionSeries ->
+                    dataSeries.id = predictionSeries.id
+                    viewModel.createUpdateDataSeries(dataSeries)
+                } ?: run {
+                    viewModel.addPredictionDataSeriesToDataSet(it, dataSeries)
+                }
+
+                viewModel.startInference(it)
+            }
+        },
+
+        isInfering = isInfering,
+        inferenceProgress = inferenceProgress,
+        onCancelInference = { viewModel.cancelInference() }
     )
 
     if (importDataMergeDecision == ImportDataMergeDecision.ON_REQUEST) {
@@ -249,10 +252,14 @@ fun DataManagerWindow(
     isImportingData: Boolean,
     dataImportState: Float,
     onCancelImport: () -> Unit,
+    isInfering: Boolean,
+    inferenceProgress: Float,
+    onCancelInference: () -> Unit,
     onSaveDataSet: (DataSet) -> Unit,
     onDissolveDataSet: () -> Unit,
     onRemoveDataSeriesFromDataSet: () -> Unit,
-    onSaveInferenceConfiguration: (DataSet, Map<Long, Long>) -> Unit
+    onSaveInferenceConfiguration: (DataSet, Map<Long, Long>) -> Unit,
+    onCreateInferenceSeries: (DataSeries) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -278,12 +285,24 @@ fun DataManagerWindow(
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             if (isImportingData) {
-                DataSeriesImportLoading(
+                ProgressBarWithCancel(
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = 32.dp),
+                    progressText = "Importing data...",
                     loadingState = dataImportState,
-                    onCancelImport = onCancelImport
+                    onCancel = onCancelImport
+                )
+            }
+
+            if(isInfering) {
+                ProgressBarWithCancel(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 32.dp),
+                    progressText = "Infering data...",
+                    loadingState = inferenceProgress,
+                    onCancel = onCancelInference
                 )
             }
 
@@ -344,10 +363,14 @@ fun DataManagerWindow(
 
                 DATA_SET_INFERENCE -> DataSetInferenceConfiguration(
                     modifier = modifier,
-                    dataSet = currentDataSet
-                ) { dataSet, tensorList ->
-                    onSaveInferenceConfiguration(dataSet, tensorList)
-                }
+                    dataSet = currentDataSet,
+                    onSaveConfiguration = { dataSet, tensorList ->
+                        onSaveInferenceConfiguration(dataSet, tensorList)
+                    },
+                    onCreateInferenceDataSeries = { dataSeries ->
+                        onCreateInferenceSeries(dataSeries)
+                    }
+                )
             }
         }
     }
@@ -435,7 +458,8 @@ fun DataSetList(
                         null, stringResource(R.string.data_manager_not_designated_data_series), "",
                         columns = dataSeriesWithoutDataSetList.associateBy(keySelector = { it }, valueTransform = { null }),
                         aiModel = null,
-                        autoPredict = false
+                        autoPredict = false,
+                        predictionSeries = null
                     ),
                     onOpenDataSetDetails = { onOpenRemainingDataSeries(dataSeriesWithoutDataSetList) },
                 )
@@ -637,7 +661,8 @@ fun DataSetCreation(
                         description = description,
                         columns = (currentDataSet?.columns?: emptyMap()) + currentDataSeriesList.associateBy(keySelector = { it }, valueTransform = { null }),
                         aiModel = null,
-                        autoPredict = false
+                        autoPredict = false,
+                        predictionSeries = currentDataSet?.predictionSeries
                     )
                 )
             },
@@ -936,11 +961,12 @@ fun DataSetInferenceSelectFeatures(
 @Composable
 fun DataSetInferenceDefinePredictionConfiguration(
     modifier: Modifier = Modifier,
+    currentDataSet: DataSet?,
     onSaveConfiguration: (Boolean, DataSeries) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("") }
-    var enableAutoPrediction by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf(currentDataSet?.predictionSeries?.name?:"") }
+    var unit by remember { mutableStateOf(currentDataSet?.predictionSeries?.unit?:"") }
+    var enableAutoPrediction by remember { mutableStateOf(currentDataSet?.autoPredict?:false) }
 
     val isSaveEnabled = name.isNotBlank() && unit.isNotBlank()
 
@@ -950,6 +976,7 @@ fun DataSetInferenceDefinePredictionConfiguration(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+
         // Input for DataSeries name
         OutlinedTextField(
             value = name,
@@ -985,7 +1012,7 @@ fun DataSetInferenceDefinePredictionConfiguration(
             onClick = {
                 if (isSaveEnabled) {
                     val dataSeries = DataSeries(
-                        id = null,
+                        id = currentDataSet?.predictionSeries?.id,
                         origin = "Predicted",
                         name = name,
                         unit = unit,
@@ -1013,7 +1040,8 @@ fun DataSetInferenceConfiguration(
     modelViewModel: AIViewModel = hiltViewModel(),
     modifier: Modifier,
     dataSet: DataSet?,
-    onSaveConfiguration: (DataSet, Map<Long, Long>) -> Unit
+    onSaveConfiguration: (DataSet, Map<Long, Long>) -> Unit,
+    onCreateInferenceDataSeries: (DataSeries) -> Unit
 ) {
     dataSet?.let {
         val aiModelList by modelViewModel.allModels.collectAsState()
@@ -1045,10 +1073,12 @@ fun DataSetInferenceConfiguration(
             }
             INFERENCE_CONFIGURATION_FINISH_CONFIG -> DataSetInferenceDefinePredictionConfiguration(
                 modifier = modifier,
+                currentDataSet = dataSet,
             ) { autoPredict, dataSeries ->
                 dataSet.aiModel = selectedModel
                 dataSet.autoPredict = autoPredict
 
+                onCreateInferenceDataSeries(dataSeries)
                 onSaveConfiguration(dataSet, selectedFeatureList)
             }
         }
@@ -1056,10 +1086,11 @@ fun DataSetInferenceConfiguration(
 }
 
 @Composable
-fun DataSeriesImportLoading(
+fun ProgressBarWithCancel(
     modifier: Modifier,
+    progressText: String,
     loadingState: Float,
-    onCancelImport: () -> Unit
+    onCancel: () -> Unit
 ) {
     Card(
         modifier = modifier
@@ -1071,10 +1102,10 @@ fun DataSeriesImportLoading(
         ) {
             Text(
                 modifier = Modifier.padding(8.dp),
-                text = "Data importing..." + String.format(locale = Locale.GERMAN, "%.2f", loadingState * 100) + "%"
+                text = progressText + String.format(locale = Locale.GERMAN, "%.2f", loadingState * 100) + "%"
             )
             Button(
-                onClick = onCancelImport
+                onClick = onCancel
             ) {
                 Text("Cancel")
             }
@@ -1112,7 +1143,8 @@ val dataSetPreviewItem = DataSet(
         uri = Uri.parse("Blablabla/Pfad"),
         name = "Dolles Modell",
     ),
-    autoPredict = false
+    autoPredict = false,
+    predictionSeries = null
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
@@ -1142,7 +1174,11 @@ fun Preview() {
             onEditDataSet = {},
             onRemoveDataSeriesFromDataSet = {},
             onOpenInferenceConfiguration = {},
-            onSaveInferenceConfiguration = {_, _ -> }
+            onSaveInferenceConfiguration = {_, _ -> },
+            onCreateInferenceSeries = {},
+            onCancelInference = {},
+            inferenceProgress = 0.0f,
+            isInfering = false
         )
     }
 }

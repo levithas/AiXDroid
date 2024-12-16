@@ -48,6 +48,10 @@ interface DataSetDao {
     fun getAllDataSeries(): Flow<List<DBDataSeries>>
 
     @Transaction
+    @Query("SELECT * FROM DBDataSeries WHERE id == :id")
+    fun getDataSeriesById(id: Long) : DBDataSeries?
+
+    @Transaction
     @Query("SELECT * FROM DBDataSeries")
     fun getAllDataSeriesNoFlow(): List<DBDataSeries>
 
@@ -59,9 +63,8 @@ interface DataSetDao {
     @Query("SELECT * FROM dbdataset WHERE id == :id")
     fun getDataSetById(id: Long) : DBDataSetWithDataSeries?
 
-    @Transaction
-    @Query("SELECT * FROM dbDataPoint WHERE dataSeriesId == :dataSeriesId")
-    fun getDataPointsByDataSeriesId(dataSeriesId: Long) : PagingSource<Int, DBDataPoint>
+    @Query("SELECT * FROM dbDataPoint WHERE dataSeriesId == :dataSeriesId AND time >= :minTime ORDER BY time ASC LIMIT :count")
+    suspend fun getDataPointsInRange(dataSeriesId: Long, minTime: Long, count: Int): List<DBDataPoint>
 
     @Transaction
     @Query("SELECT MIN(time) FROM DBDataPoint WHERE dataSeriesId == :dataSeriesId")

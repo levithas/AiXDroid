@@ -2,13 +2,19 @@ package de.levithas.aixdroid.domain.usecase.datamanager
 
 import android.content.Context
 import android.net.Uri
+import androidx.paging.PagingData
+import androidx.paging.flatMap
+import androidx.paging.map
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import de.levithas.aixdroid.data.repository.DataRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.IOException
@@ -19,7 +25,10 @@ import javax.inject.Inject
 interface DataSeriesUseCase {
     suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit)
     suspend fun checkExistingDataSeriesNames(uri: Uri) : Boolean
-    suspend fun addInferedDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long
+    suspend fun addDataSeries(dataSeries: DataSeries) : Long
+    suspend fun updateDataSeries(dataSeries: DataSeries) : Int
+    suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, minTime: Date, count: Int) : List<DataPoint>?
+    suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long
     suspend fun deleteDataSeries(dataSeriesId: Long)
 }
 
@@ -34,8 +43,20 @@ class DataSeriesUseCaseImpl @Inject constructor(
 
     private var existingDataSeriesNameMap = emptyMap<String, DataSeries>()
 
-    override suspend fun addInferedDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long {
+    override suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long {
         return 0
+    }
+
+    override suspend fun addDataSeries(dataSeries: DataSeries) : Long {
+        return dataRepository.addDataSeries(listOf(dataSeries)).first()
+    }
+
+    override suspend fun updateDataSeries(dataSeries: DataSeries) : Int {
+        return dataRepository.updateDataSeries(dataSeries)
+    }
+
+    override suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, minTime: Date, count: Int) : List<DataPoint>? {
+        return dataSeries.id?.let { dataRepository.getDataPointsByDataSeriesId(it, minTime.time, count) }
     }
 
     override suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit) {
