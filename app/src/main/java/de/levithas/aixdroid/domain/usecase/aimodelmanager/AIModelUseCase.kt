@@ -77,6 +77,7 @@ class AIModelUseCaseImpl @Inject constructor(
                         version = extractor.modelMetadata.version() ?: "",
                         author = extractor.modelMetadata.author() ?: "",
                         licence = extractor.modelMetadata.license() ?: "",
+                        timePeriod = 0.0f,
                         inputs = inputList,
                         outputs = outputList
                     )

@@ -10,6 +10,8 @@ data class ModelData(
     val author: String = "",
     val licence: String = "",
 
+    val timePeriod: Float = 1.0f,
+
     val inputs: List<TensorData> = emptyList(),
     val outputs: List<TensorData> = emptyList(),
 )

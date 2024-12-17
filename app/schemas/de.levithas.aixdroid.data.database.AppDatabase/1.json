@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f5c5f60cacf76230c375e20bb55ca573",
+    "identityHash": "5e596242652848576079778424ca2c8f",
     "entities": [
       {
         "tableName": "model_data",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileName` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `version` TEXT NOT NULL, `author` TEXT NOT NULL, `licence` TEXT NOT NULL, PRIMARY KEY(`fileName`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileName` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `version` TEXT NOT NULL, `author` TEXT NOT NULL, `licence` TEXT NOT NULL, `timePeriod` REAL NOT NULL, PRIMARY KEY(`fileName`))",
         "fields": [
           {
             "fieldPath": "fileName",
@@ -42,6 +42,12 @@
             "fieldPath": "licence",
             "columnName": "licence",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timePeriod",
+            "columnName": "timePeriod",
+            "affinity": "REAL",
             "notNull": true
           }
         ],
@@ -421,7 +427,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f5c5f60cacf76230c375e20bb55ca573')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5e596242652848576079778424ca2c8f')"
     ]
   }
 }

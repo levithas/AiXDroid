@@ -11,4 +11,7 @@ data class DBModelData(
     val version: String,
     val author: String,
     val licence: String,
+
+    val timePeriod: Float
+
 )

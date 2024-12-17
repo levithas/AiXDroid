@@ -28,7 +28,7 @@ interface DataSeriesUseCase {
     suspend fun addDataSeries(dataSeries: DataSeries) : Long
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
     suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, minTime: Date, count: Int) : List<DataPoint>?
-    suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long
+    suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : List<Long>
     suspend fun deleteDataSeries(dataSeriesId: Long)
 }
 
@@ -43,8 +43,8 @@ class DataSeriesUseCaseImpl @Inject constructor(
 
     private var existingDataSeriesNameMap = emptyMap<String, DataSeries>()
 
-    override suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : Long {
-        return 0
+    override suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : List<Long> {
+        return dataRepository.addDataPoints(dataPointList, dataSeriesId)
     }
 
     override suspend fun addDataSeries(dataSeries: DataSeries) : Long {

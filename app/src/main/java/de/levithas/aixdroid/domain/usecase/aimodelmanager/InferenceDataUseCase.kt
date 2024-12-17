@@ -1,20 +1,19 @@
 package de.levithas.aixdroid.domain.usecase.aimodelmanager
 
 import android.content.Context
-import android.net.Uri
+import com.google.flatbuffers.FlatBufferBuilder.ByteBufferFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
 import org.tensorflow.lite.Interpreter
-import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.FloatBuffer
-import java.nio.MappedByteBuffer
 import java.util.Date
 import javax.inject.Inject
+import kotlin.math.cos
+import kotlin.math.sin
 
 interface InferenceDataUseCase {
     suspend fun startInference(dataSet: DataSet, onProgressUpdate: (Float) -> Unit)
@@ -26,8 +25,8 @@ class InferenceDataUseCaseImpl @Inject constructor(
     private val aiModelUseCase: AIModelUseCase
 ) : InferenceDataUseCase {
 
-    private val inferenceBufferSize = 10000
-    private val predictionBufferSize = 1000
+    private val inferenceBufferSize = 75 //Testmodell n_steps
+    private val predictionBufferRatio = 0.5
 
     override suspend fun startInference(dataSet: DataSet, onProgressUpdate: (Float) -> Unit) {
         dataSet.aiModel?.fileName?.let { fileName ->
@@ -35,17 +34,22 @@ class InferenceDataUseCaseImpl @Inject constructor(
                 Interpreter(fileContent)
             }?.let { interpreter ->
                 dataSet.predictionSeries?.let { predictionSeries ->
-                    val startTime = predictionSeries.startTime?: Date(0)
-                    val endTime = predictionSeries.endTime?:Date(Long.MAX_VALUE)
+
+                    val dataSeriesWithTensor = dataSet.columns.filter { (_, tensor) -> tensor != null }
+                    val startTime = dataSet.columns.minOf { it.key.startTime?.time ?:Long.MIN_VALUE }
+                    val endTime = dataSet.columns.maxOf { it.key.endTime?.time ?:Long.MAX_VALUE }
                     var currentStartTime = startTime
                     var continueLoop = true
-                    val featureList = mutableListOf<List<DataPoint>>()
-                    val predictionList = mutableListOf<DataPoint>()
 
-                    while(continueLoop) {
-                        for (series in dataSet.columns) {
+
+                    while (continueLoop) {
+                        val featureList = mutableListOf<List<DataPoint>>()
+                        val predictionList = mutableListOf<DataPoint>()
+
+                        for (series in dataSeriesWithTensor) {
                             // TODO: inferenceBufferSize has to be controlled by the model batch size
-                            dataSeriesUseCase.getDataPointsFromDataSeries(series.key, currentStartTime, inferenceBufferSize)?.let { dataPointList ->
+                            dataSeriesUseCase.getDataPointsFromDataSeries(series.key, Date(currentStartTime), inferenceBufferSize)?.let {
+                                dataPointList ->
                                 if (dataPointList.isNotEmpty()) {
                                     featureList.add(dataPointList)
                                 }
@@ -54,26 +58,33 @@ class InferenceDataUseCaseImpl @Inject constructor(
 
                         if (featureList.isNotEmpty()) {
                             val featureMap = transformToMap(featureList)
-
                             if (featureMap.isNotEmpty()) {
-                                inferenceOnDataPointMap(interpreter, featureMap).let { predictedData ->
-                                    predictionList.add(DataPoint(
-                                        time = Date(predictedData.first),
-                                        value = predictedData.second
-                                    ))
-                                }
+                                val timestamp = featureMap.maxOf { it.key }
+                                val featureVector = transformFeatureListToByteBufferArray(featureList)
 
-                                if (predictionList.size > predictionBufferSize) {
+                                if (featureList[0].size == 75) {
+                                    inferenceOnDataPointMap(interpreter, timestamp, featureVector)
+                                        .let {
+                                                predictedData ->
+                                            predictionList.add(
+                                                DataPoint(
+                                                    time = Date(predictedData.first),
+                                                    value = predictedData.second
+                                                )
+                                            )
+                                        }
                                     savePredictionDataSeries(predictionSeries, predictionList)
+                                }
+                                else {
+                                    continueLoop = false
                                 }
                             }
 
-                            onProgressUpdate( (currentStartTime.time - startTime.time)/(endTime.time - startTime.time).toFloat())
+                            onProgressUpdate((currentStartTime - startTime) / (endTime - startTime).toFloat())
 
-                            // Find smallest last value of all feature lists
-                            currentStartTime = featureList.minOf { dataPointList -> dataPointList.last().time }
-                        }
-                        else {
+                            // Find next larger Timepoint
+                            currentStartTime = featureList.minOf { it.filter { it2 -> it2.time.time > currentStartTime }.minOf { it.time.time } }
+                        } else {
                             continueLoop = false
                         }
                     }
@@ -81,6 +92,19 @@ class InferenceDataUseCaseImpl @Inject constructor(
                 interpreter.close()
             }
         }
+    }
+
+    private fun transformFeatureListToByteBufferArray(featureList: List<List<DataPoint>>) : Array<ByteBuffer> {
+        val bufferArray = mutableListOf<ByteBuffer>()
+        featureList.forEach { list ->
+            val byteBuffer = ByteBuffer.allocateDirect(4 * list.size )
+            list.map {
+                    point -> byteBuffer.putFloat(point.value)
+            }
+            byteBuffer.position(0)
+            bufferArray.add(byteBuffer)
+        }
+        return bufferArray.toTypedArray()
     }
 
     private fun transformToMap(dataPointLists: List<List<DataPoint>>): Map<Long, Array<Float>> {
@@ -93,21 +117,22 @@ class InferenceDataUseCaseImpl @Inject constructor(
             }
     }
 
-
-    private fun transformToInputVector(dataPointMap: Map<Long, Array<Float>>) : Array<FloatBuffer> {
-        return dataPointMap.map { (time, features) -> FloatBuffer.wrap(floatArrayOf(time.toFloat()) + features.toFloatArray()) }
-            .toTypedArray()
+    private fun transformTimePeriodicity(unixTime: Long, timePeriod: Float) : ByteBuffer {
+        val byteBuffer = ByteBuffer.allocateDirect(4*2) // 4 Byte per Value
+        byteBuffer.putFloat(sin(2*Math.PI * unixTime/timePeriod).toFloat())
+        byteBuffer.putFloat(cos(2*Math.PI * unixTime/timePeriod).toFloat())
+        byteBuffer.position(0)
+        return byteBuffer
     }
 
     // Hinweis: Keine Seq2Seq-Modelle! Es wird nur der letzte Zeitstempel ausgegeben
-    private fun inferenceOnDataPointMap(interpreter: Interpreter, dataPointMap: Map<Long, Array<Float>>) : Pair<Long, Float> {
+    private fun inferenceOnDataPointMap(interpreter: Interpreter, timeStamp: Long, inputFeatures: Array<ByteBuffer>): Pair<Long, Float> {
+        val inputVector = arrayOf(transformTimePeriodicity(timeStamp, 24*3600000.0f)) + inputFeatures
+        val outputVector = ByteBuffer.allocateDirect(4) // 4 Byte for 1 Output
 
-        val inputVector = transformToInputVector(dataPointMap)
-        val outputVector = floatArrayOf()
+        interpreter.run(inputVector[1], outputVector)
 
-        interpreter.run(inputVector, outputVector)
-
-        return Pair(dataPointMap.maxOf { it.key }, outputVector.last())
+        return Pair(timeStamp, outputVector.getFloat(0))
     }
 
 

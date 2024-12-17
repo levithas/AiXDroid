@@ -21,6 +21,8 @@ fun DBModelWithTensors.toDomainModel() : ModelData {
         author = this.modelData.author,
         licence = this.modelData.licence,
 
+        timePeriod = this.modelData.timePeriod,
+
         inputs = this.inputs.map {
             it.toDomainModel()
         },
@@ -53,6 +55,7 @@ fun ModelData.toDBModel(): DBModelData {
         version = this.version,
         author = this.author,
         licence = this.licence,
+        timePeriod = this.timePeriod
     )
 }
 
