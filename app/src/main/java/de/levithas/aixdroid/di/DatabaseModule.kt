@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.levithas.aixdroid.data.dao.DataSetDao
+import de.levithas.aixdroid.data.dao.IntentDataDao
 import de.levithas.aixdroid.data.dao.ModelDataDao
 import de.levithas.aixdroid.data.database.AppDatabase
 import javax.inject.Singleton
@@ -35,5 +36,10 @@ object DatabaseModule {
     @Provides
     fun provideDatasetDao(database: AppDatabase): DataSetDao {
         return database.DataSetDao()
+    }
+
+    @Provides
+    fun provideIntentDataDao(database: AppDatabase): IntentDataDao {
+        return database.IntentDataDao()
     }
 }

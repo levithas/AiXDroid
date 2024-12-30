@@ -7,9 +7,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.levithas.aixdroid.data.dao.DataSetDao
+import de.levithas.aixdroid.data.dao.IntentDataDao
 import de.levithas.aixdroid.data.dao.ModelDataDao
 import de.levithas.aixdroid.data.repository.DataRepository
 import de.levithas.aixdroid.data.repository.DataRepositoryImpl
+import de.levithas.aixdroid.data.repository.ExternalIntentRepository
+import de.levithas.aixdroid.data.repository.ExternalIntentRepositoryImpl
 import de.levithas.aixdroid.data.repository.ModelRepository
 import de.levithas.aixdroid.data.repository.ModelRepositoryImpl
 import javax.inject.Singleton
@@ -39,5 +42,13 @@ object RepositoryModule {
         modelDao: ModelDataDao
     ) : DataRepository {
         return DataRepositoryImpl(dao, provideModelRepository(modelDao))
+    }
+
+    @Provides
+    @Singleton
+    fun provideExternalIntentRepository(
+        dao: IntentDataDao
+    ) : ExternalIntentRepository {
+        return ExternalIntentRepositoryImpl(dao)
     }
 }
