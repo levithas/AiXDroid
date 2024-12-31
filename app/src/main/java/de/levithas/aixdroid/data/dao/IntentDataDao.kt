@@ -17,7 +17,7 @@ interface IntentDataDao {
 
     @Transaction
     @Query("SELECT * FROM DBIntentData")
-    suspend fun getAllIntentData() : Flow<List<DBIntentData>>
+    fun getAllIntentData() : Flow<List<DBIntentData>>
 
     @Transaction
     @Query("SELECT * FROM DBIntentData WHERE packageName == :packageName")
