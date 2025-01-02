@@ -88,8 +88,8 @@ class ExternalIntentService : LifecycleService() {
         manager?.createNotificationChannel(channel)
 
         return NotificationCompat.Builder(this, notificationChannelId)
-            .setContentTitle("Service läuft im Hintergrund")
-            .setContentText("Der Service ist aktiv.")
+            .setContentTitle("External Intent Service")
+            .setContentText("Service is running!")
             .build()
     }
 }

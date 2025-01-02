@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import de.levithas.aixdroid.services.intentactions.ExternalIntentAction
 
 class ExternalIntentReceiver(
@@ -15,8 +16,8 @@ class ExternalIntentReceiver(
 
     override fun onReceive(context: Context?, intent: Intent?) {
         context?.let {
-            // TODO: Fill DataBundle
-            intentAction.process(Bundle())
+            Log.i("ExternalIntentReceiver", "Received Intent for ${getActionString()}")
+            intentAction.process(context, intent)
         }
     }
 }

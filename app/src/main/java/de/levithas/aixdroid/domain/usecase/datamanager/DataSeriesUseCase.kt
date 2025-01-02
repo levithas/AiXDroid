@@ -24,8 +24,9 @@ import javax.inject.Inject
 
 interface DataSeriesUseCase {
     suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit)
-    suspend fun checkExistingDataSeriesNames(uri: Uri) : Boolean
+    suspend fun checkExistingDataSeriesNames(name: String) : Boolean
     suspend fun addDataSeries(dataSeries: DataSeries) : Long
+    suspend fun getDataSeriesByName(name: String) : DataSeries?
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
     suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, minTime: Date, count: Int) : List<DataPoint>?
     suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : List<Long>
@@ -49,6 +50,10 @@ class DataSeriesUseCaseImpl @Inject constructor(
 
     override suspend fun addDataSeries(dataSeries: DataSeries) : Long {
         return dataRepository.addDataSeries(listOf(dataSeries)).first()
+    }
+
+    override suspend fun getDataSeriesByName(name: String) : DataSeries? {
+        return dataRepository.getDataSeriesByName(name)
     }
 
     override suspend fun updateDataSeries(dataSeries: DataSeries) : Int {
@@ -139,17 +144,12 @@ class DataSeriesUseCaseImpl @Inject constructor(
         }
     }
 
-    override suspend fun checkExistingDataSeriesNames(uri: Uri): Boolean {
-        val inputStream = context.contentResolver.openInputStream(uri)
-        val inputStreamReader = InputStreamReader(inputStream)
-        val bufferedReader = BufferedReader(inputStreamReader)
+    override suspend fun checkExistingDataSeriesNames(name: String): Boolean {
         val result: Boolean
 
         withContext(Dispatchers.IO) {
-            val line = bufferedReader.readLine()
-            val dataSeriesList = parseCSVHeaderToDataSeries(line, separatorSign)
             existingDataSeriesNameMap = dataRepository.getAllDataSeriesNoFlow().associateBy { it.name }
-            result = dataSeriesList.any { existingDataSeriesNameMap[it.name] != null }
+            result = existingDataSeriesNameMap[name] != null
         }
 
         return result

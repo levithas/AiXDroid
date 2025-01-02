@@ -7,6 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.levithas.aixdroid.data.repository.DataRepository
 import de.levithas.aixdroid.data.repository.ExternalIntentRepository
+import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
 import de.levithas.aixdroid.services.ExternalIntentService
 import de.levithas.aixdroid.services.intentactions.InferenceExternalIntentAction
 import de.levithas.aixdroid.services.intentactions.ReadDataExternalIntentAction
@@ -27,9 +28,9 @@ object ServiceAndActionModule {
     @Provides
     fun providesWriteDataIntentAction(
         context: Context,
-        dataRepository : DataRepository
+        dataSeriesUseCase : DataSeriesUseCase
     ) : WriteDataExternalIntentAction {
-        return WriteDataExternalIntentAction(context, dataRepository)
+        return WriteDataExternalIntentAction(context, dataSeriesUseCase)
     }
 
     @Provides

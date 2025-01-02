@@ -1,6 +1,7 @@
 package de.levithas.aixdroid.services.intentactions
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -14,7 +15,7 @@ class InferenceExternalIntentAction @Inject constructor(
 
     override fun getActionString() = ".INFERENCE"
 
-    override fun process(data: Bundle) {
+    override fun process(context: Context, intent: Intent?) {
         Log.i("InferenceExternalIntentAction", "Processing...")
     }
 }

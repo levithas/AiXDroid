@@ -52,6 +52,10 @@ interface DataSetDao {
     fun getDataSeriesById(id: Long) : DBDataSeries?
 
     @Transaction
+    @Query("SELECT * FROM DBDATASERIES WHERE name == :name")
+    fun getDataSeriesByName(name: String) : DBDataSeries?
+
+    @Transaction
     @Query("SELECT * FROM DBDataSeries")
     fun getAllDataSeriesNoFlow(): List<DBDataSeries>
 
