@@ -54,9 +54,11 @@ class ExternalIntentViewModel @Inject constructor(
 
     fun createUpdateIntentData(externalIntentConfiguration: ExternalIntentConfiguration) {
         viewModelScope.launch(Dispatchers.IO) {
-            intentDataUseCase.createUpdateExternalIntentConfiguration(
-                externalIntentConfiguration
-            )
+            if (allIntentData.value.contains(externalIntentConfiguration)) {
+                intentDataUseCase.updateExternalIntentConfiguration(externalIntentConfiguration)
+            } else {
+                intentDataUseCase.createExternalIntentConfiguration(externalIntentConfiguration)
+            }
         }
     }
 

@@ -6,7 +6,8 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface IntentDataUseCase {
-    suspend fun createUpdateExternalIntentConfiguration(externalIntentConfiguration: ExternalIntentConfiguration)
+    suspend fun createExternalIntentConfiguration(externalIntentConfiguration: ExternalIntentConfiguration)
+    suspend fun updateExternalIntentConfiguration(externalIntentConfiguration: ExternalIntentConfiguration)
     suspend fun getAllExternalIntentConfigurations() : Flow<List<ExternalIntentConfiguration>>
     suspend fun getExternalIntentConfiguration(packageName: String) : ExternalIntentConfiguration?
     suspend fun deleteExternalIntentConfiguration(packageName: String)
@@ -20,7 +21,11 @@ class IntentDataUseCaseImpl @Inject constructor(
         return externalIntentRepository.getExternalIntentList()
     }
 
-    override suspend fun createUpdateExternalIntentConfiguration(externalIntentConfiguration: ExternalIntentConfiguration) {
+    override suspend fun createExternalIntentConfiguration(externalIntentConfiguration: ExternalIntentConfiguration) {
+        externalIntentRepository.addExternalIntent(externalIntentConfiguration)
+    }
+
+    override suspend fun updateExternalIntentConfiguration(externalIntentConfiguration: ExternalIntentConfiguration) {
         externalIntentRepository.updateExternalIntent(externalIntentConfiguration)
     }
 

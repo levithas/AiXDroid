@@ -4,20 +4,28 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -83,15 +91,19 @@ fun ExternalIntentManagerWindow(
                 currentTab = TAB_DETAIL_VIEW
             }
         )
-        TAB_DETAIL_VIEW -> currentIntentData?.let { ExternalIntentDetailView(
-            modifier = modifier,
-            intentData = it,
+        TAB_DETAIL_VIEW -> ExternalIntentDetailView(
+            intentData = currentIntentData,
             onBackToOverview = { currentTab = TAB_OVERVIEW },
             onCreateUpdateIntentData = { intentData ->
                 currentIntentData = intentData
                 onCreateUpdateIntentData(intentData)
-            }
-        )}
+                currentTab = TAB_OVERVIEW
+            },
+            onDeleteIntentData = { currentIntentData?.let {
+                onDeleteIntentData(it.packageName)
+                currentTab = TAB_OVERVIEW
+            } },
+        )
     }
 }
 
@@ -118,7 +130,8 @@ fun ExternalIntentOverview(
         ) {
             ExternalIntentItemList(
                 modifier = Modifier,
-                intentDataList = intentDataList
+                intentDataList = intentDataList,
+                onOpenIntentDataDetails = { intentData -> onOpenIntentDataDetails(intentData) }
             )
             IconButton(
                 modifier = modifier
@@ -145,6 +158,7 @@ fun ExternalIntentOverview(
 fun ExternalIntentItemList(
     modifier: Modifier,
     intentDataList: List<ExternalIntentConfiguration>,
+    onOpenIntentDataDetails: (ExternalIntentConfiguration?) -> Unit
 ) {
     Text("Willkommen im External Intent Manager!")
 
@@ -155,8 +169,8 @@ fun ExternalIntentItemList(
     ) {
         items(intentDataList) { item ->
             ExternalIntentItem(
-                Modifier,
-                item
+                item,
+                onClickItem = { onOpenIntentDataDetails(item) }
             )
         }
     }
@@ -164,8 +178,8 @@ fun ExternalIntentItemList(
 
 @Composable
 fun ExternalIntentItem(
-    modifier: Modifier,
-    intentData: ExternalIntentConfiguration
+    intentData: ExternalIntentConfiguration,
+    onClickItem: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -173,7 +187,7 @@ fun ExternalIntentItem(
             .defaultMinSize(minHeight = 76.dp)
             .padding(8.dp)
             .clickable {
-
+                onClickItem()
             },
         colors = MaterialTheme.customColors.dataSetItemCard,
     ) {
@@ -203,14 +217,124 @@ fun ExternalIntentItem(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExternalIntentDetailView(
-    modifier: Modifier,
-    intentData: ExternalIntentConfiguration,
+    intentData: ExternalIntentConfiguration?,
     onBackToOverview: () -> Unit,
-    onCreateUpdateIntentData: (ExternalIntentConfiguration) -> Unit
+    onCreateUpdateIntentData: (ExternalIntentConfiguration) -> Unit,
+    onDeleteIntentData: () -> Unit
 ) {
+    var name by remember { mutableStateOf(intentData?.name?:"") }
+    var packageName by remember {mutableStateOf(intentData?.packageName?:"")}
+    var allowReadData by remember {mutableStateOf(intentData?.allowReadData?:false)}
+    var allowWriteData by remember {mutableStateOf(intentData?.allowWriteData?:false)}
+    var allowInference by remember {mutableStateOf(intentData?.allowInference?:false)}
 
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.external_intent_manager_details)) },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBackToOverview
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = MaterialTheme.customColors.topAppBarColors
+            )
+        },
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(paddingValues),
+            verticalArrangement = Arrangement.Top
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Top
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = packageName,
+                    onValueChange = { packageName = it },
+                    label = { Text("Package Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = allowWriteData,
+                        onCheckedChange = { allowWriteData = it }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Allow Writing Data")
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = allowReadData,
+                        onCheckedChange = { allowReadData = it }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Allow Reading Data")
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = allowInference,
+                        onCheckedChange = { allowInference = it }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Allow Inference")
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        onClick = {
+                            onCreateUpdateIntentData(
+                                ExternalIntentConfiguration(
+                                    name = name,
+                                    packageName = packageName,
+                                    allowReadData = allowReadData,
+                                    allowWriteData = allowWriteData,
+                                    allowInference = allowInference
+                                )
+                            )
+                        }
+                    ) {
+                        Text(if (intentData != null) "Save" else "Create New")
+                    }
+                    intentData?.let {
+                        Button(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            onClick = onDeleteIntentData
+                        ) {
+                            Text("Delete")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 val intentDataPreviewItem = ExternalIntentConfiguration(
@@ -237,7 +361,18 @@ fun Preview() {
 @Composable
 fun ExternalIntentItemPreview() {
     AiXDroidTheme { ExternalIntentItem(
-        Modifier,
-        intentDataPreviewItem
+        intentDataPreviewItem,
+        {}
+    ) }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
+@Composable
+fun ExternalIntentDetailPreview() {
+    AiXDroidTheme { ExternalIntentDetailView(
+        intentDataPreviewItem,
+        {},
+        {},
+        {}
     ) }
 }
