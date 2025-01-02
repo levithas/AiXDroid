@@ -25,12 +25,12 @@ class WriteDataExternalIntentAction @Inject constructor(
 
     override fun getActionString() = ".WRITE_DATA"
 
-    override fun process(context: Context, intent: Intent?) {
+    override fun process(context: Context?, intent: Intent?) {
         Log.i("WriteDataExternalIntentAction", "Processing...")
         intent?.extras?.let { extras ->
             val dataSeriesName = extras.getString("seriesName")
-            val timeValueArray = extras.getIntegerArrayList("timestamp")
-            val dataValueArray = extras.getFloatArray("data")
+            val timeValueArray = extras.getIntArray("timeValues")
+            val dataValueArray = extras.getFloatArray("dataValues")
 
             if (dataSeriesName != null && timeValueArray != null && dataValueArray != null
                 && dataSeriesName.isNotBlank() && timeValueArray.size == dataValueArray.size
@@ -42,7 +42,8 @@ class WriteDataExternalIntentAction @Inject constructor(
 
                     val dataSeries = dataSeriesUseCase.getDataSeriesByName(dataSeriesName)
                     var dataSeriesId = dataSeries?.id
-                    dataSeries?.let {
+                    if (dataSeriesId == null) {
+                        Log.i("WriteDataExternalIntentAction", "No dataSeries found with name ${dataSeriesName}! Creating one...")
                         dataSeriesId = dataSeriesUseCase.addDataSeries(
                             DataSeries(
                                 id = null,
@@ -54,9 +55,13 @@ class WriteDataExternalIntentAction @Inject constructor(
                                 endTime = null,
                             )
                         )
+                    } else
+                    {
+                        Log.i("WriteDataExternalIntentAction", "DataSeries found!")
                     }
 
-                    dataSeriesId?.let { id -> dataSeriesUseCase.addDataPoints(id, dataPointList) }
+                    dataSeriesUseCase.addDataPoints(dataSeriesId, dataPointList)
+                    Log.i("WriteDataExternalIntentAction", "Done writing ${dataPointList.size} DataPoints!")
                 }
             } else {
                 Log.w("WriteDataExternalIntentAction", "Missing required extras!")

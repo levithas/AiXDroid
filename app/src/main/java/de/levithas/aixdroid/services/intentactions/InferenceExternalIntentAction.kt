@@ -15,7 +15,7 @@ class InferenceExternalIntentAction @Inject constructor(
 
     override fun getActionString() = ".INFERENCE"
 
-    override fun process(context: Context, intent: Intent?) {
+    override fun process(context: Context?, intent: Intent?) {
         Log.i("InferenceExternalIntentAction", "Processing...")
     }
 }

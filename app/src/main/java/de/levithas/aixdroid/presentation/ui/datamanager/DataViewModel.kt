@@ -124,22 +124,23 @@ class DataViewModel @Inject constructor(
             _importProgress.value = 0.0f
 
             try {
-                if (dataSeriesUseCase.checkExistingDataSeriesNames(uri)) {
-                    _importDataMergeDecision.value = ImportDataMergeDecision.ON_REQUEST
-
-                    // Wait for UI to make a decision
-                    val decision = _importDataMergeDecision.filter { it != ImportDataMergeDecision.ON_REQUEST }.first()
-
-                    when (decision) {
-                        ImportDataMergeDecision.NONE -> return@launch
-                        ImportDataMergeDecision.ON_REQUEST -> {
-                            error("UI decision did not block!!!")
-                        }
-
-                        ImportDataMergeDecision.MERGE -> {}
-                        ImportDataMergeDecision.NO_MERGE -> return@launch
-                    }
-                }
+                // TODO: For the moment, just merge...
+//                if (dataSeriesUseCase.checkExistingDataSeriesNames(uri)) {
+//                    _importDataMergeDecision.value = ImportDataMergeDecision.ON_REQUEST
+//
+//                    // Wait for UI to make a decision
+//                    val decision = _importDataMergeDecision.filter { it != ImportDataMergeDecision.ON_REQUEST }.first()
+//
+//                    when (decision) {
+//                        ImportDataMergeDecision.NONE -> return@launch
+//                        ImportDataMergeDecision.ON_REQUEST -> {
+//                            error("UI decision did not block!!!")
+//                        }
+//
+//                        ImportDataMergeDecision.MERGE -> {}
+//                        ImportDataMergeDecision.NO_MERGE -> return@launch
+//                    }
+//                }
 
                 dataSeriesUseCase.importFromCSV(uri) { progress ->
                     _importProgress.value = progress

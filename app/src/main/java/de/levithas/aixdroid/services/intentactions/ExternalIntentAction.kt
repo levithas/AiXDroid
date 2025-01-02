@@ -6,5 +6,5 @@ import android.os.Bundle
 
 interface ExternalIntentAction {
     fun getActionString() : String
-    fun process(context: Context, intent: Intent?)
+    fun process(context: Context?, intent: Intent?)
 }

@@ -21,7 +21,7 @@ interface DataSetDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDataSet(dataSet: DBDataSet) : Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertDataSeries(dataSeries: DBDataSeries) : Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

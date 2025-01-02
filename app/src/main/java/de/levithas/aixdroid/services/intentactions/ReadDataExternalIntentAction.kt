@@ -16,7 +16,7 @@ class ReadDataExternalIntentAction @Inject constructor(
 
     override fun getActionString() = ".READ_DATA"
 
-    override fun process(context: Context, intent: Intent?) {
+    override fun process(context: Context?, intent: Intent?) {
         Log.i("ReadDataExternalIntentAction", "Processing...")
     }
 }

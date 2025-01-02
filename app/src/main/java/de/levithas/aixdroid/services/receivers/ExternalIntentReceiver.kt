@@ -15,9 +15,7 @@ class ExternalIntentReceiver(
     fun getActionString() = actionString + intentAction.getActionString()
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        context?.let {
-            Log.i("ExternalIntentReceiver", "Received Intent for ${getActionString()}")
-            intentAction.process(context, intent)
-        }
+        Log.i("ExternalIntentReceiver", "Received Intent for ${getActionString()}")
+        intentAction.process(context, intent)
     }
 }
