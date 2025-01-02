@@ -7,12 +7,12 @@ import de.levithas.aixdroid.data.repository.DataRepository
 import javax.inject.Inject
 
 
-class ReadDataExternalIntentAction @Inject constructor(
+class WriteDataExternalIntentAction @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dataRepository: DataRepository,
     ) : ExternalIntentAction {
 
-    override fun getActionString() = ".READ_DATA"
+    override fun getActionString() = ".WRITE_DATA"
 
     override fun process(data: Bundle) {
 

@@ -6,15 +6,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.data.repository.DataRepository
 import javax.inject.Inject
 
-
-class ReadDataExternalIntentAction @Inject constructor(
+class InferenceExternalIntentAction @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dataRepository: DataRepository,
-    ) : ExternalIntentAction {
+) : ExternalIntentAction {
 
-    override fun getActionString() = ".READ_DATA"
+    override fun getActionString() = ".INFERENCE"
 
     override fun process(data: Bundle) {
-
+        TODO("Not yet implemented")
     }
+
 }
