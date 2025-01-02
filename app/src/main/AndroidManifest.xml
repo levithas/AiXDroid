@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -25,6 +28,7 @@
         </activity>
         <service android:name=".services.ExternalIntentService"
             android:exported="true"
+            android:foregroundServiceType="dataSync"
             android:permission="android.permission.BIND_JOB_SERVICE"
         />
     </application>

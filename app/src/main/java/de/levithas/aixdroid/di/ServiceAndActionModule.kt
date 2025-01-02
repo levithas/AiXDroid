@@ -39,19 +39,4 @@ object ServiceAndActionModule {
     ) : InferenceExternalIntentAction {
         return InferenceExternalIntentAction(context, dataRepository)
     }
-
-    @Provides
-    fun providesExternalIntentService(
-        intentRepository: ExternalIntentRepository,
-        readDataExternalIntentAction: ReadDataExternalIntentAction,
-        writeDataExternalIntentAction: WriteDataExternalIntentAction,
-        inferenceExternalIntentAction: InferenceExternalIntentAction
-    ) : ExternalIntentService {
-        return ExternalIntentService(
-            intentRepository,
-            readDataExternalIntentAction,
-            writeDataExternalIntentAction,
-            inferenceExternalIntentAction
-        )
-    }
 }
