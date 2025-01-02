@@ -4,7 +4,6 @@ import android.content.IntentFilter
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
-import de.levithas.aixdroid.data.repository.DataRepository
 import de.levithas.aixdroid.data.repository.ExternalIntentRepository
 import de.levithas.aixdroid.domain.model.ExternalIntentConfiguration
 import de.levithas.aixdroid.services.intentactions.InferenceExternalIntentAction
