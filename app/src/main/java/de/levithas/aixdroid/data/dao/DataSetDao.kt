@@ -67,8 +67,8 @@ interface DataSetDao {
     @Query("SELECT * FROM dbdataset WHERE id == :id")
     fun getDataSetById(id: Long) : DBDataSetWithDataSeries?
 
-    @Query("SELECT * FROM dbDataPoint WHERE dataSeriesId == :dataSeriesId AND time >= :minTime ORDER BY time ASC LIMIT :count")
-    suspend fun getDataPointsInRange(dataSeriesId: Long, minTime: Long, count: Int): List<DBDataPoint>
+    @Query("SELECT * FROM dbDataPoint WHERE dataSeriesId == :dataSeriesId AND time <= :lastTime ORDER BY time DESC LIMIT :count")
+    suspend fun getDataPointsInRange(dataSeriesId: Long, lastTime: Long, count: Int): List<DBDataPoint>
 
     @Transaction
     @Query("SELECT MIN(time) FROM DBDataPoint WHERE dataSeriesId == :dataSeriesId")

@@ -29,7 +29,7 @@ class WriteDataExternalIntentAction @Inject constructor(
         Log.i("WriteDataExternalIntentAction", "Processing...")
         intent?.extras?.let { extras ->
             val dataSeriesName = extras.getString("seriesName")
-            val timeValueArray = extras.getIntArray("timeValues")
+            val timeValueArray = extras.getLongArray("timeValues")
             val dataValueArray = extras.getFloatArray("dataValues")
 
             if (dataSeriesName != null && timeValueArray != null && dataValueArray != null
@@ -37,7 +37,7 @@ class WriteDataExternalIntentAction @Inject constructor(
                 && timeValueArray.isNotEmpty()) {
                 CoroutineScope(Dispatchers.IO).launch {
                     val dataPointList = timeValueArray.mapIndexed { index, time ->
-                        DataPoint(value = dataValueArray[index], time = Date(time.toLong()))
+                        DataPoint(value = dataValueArray[index], time = Date(time))
                     }
 
                     val dataSeries = dataSeriesUseCase.getDataSeriesByName(dataSeriesName)

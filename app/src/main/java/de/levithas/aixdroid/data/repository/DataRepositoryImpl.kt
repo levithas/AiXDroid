@@ -109,8 +109,8 @@ class DataRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDataPointsByDataSeriesId(id: Long, minTime: Long, count: Int) : List<DataPoint> {
-        return dao.getDataPointsInRange(id, minTime, count).map { it.toDomainModel() }
+    override suspend fun getDataPointsByDataSeriesId(id: Long, lastTime: Long, count: Int) : List<DataPoint> {
+        return dao.getDataPointsInRange(id, lastTime, count).map { it.toDomainModel() }
     }
 
     override suspend fun getDataPointCountByDataSeriesId(id: Long): Long {
