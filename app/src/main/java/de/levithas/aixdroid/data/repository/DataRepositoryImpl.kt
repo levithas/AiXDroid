@@ -1,12 +1,6 @@
 package de.levithas.aixdroid.data.repository
 
-import android.net.Uri
-import androidx.lifecycle.LiveData
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.PagingSource
-import androidx.paging.map
+import android.util.Log
 import de.levithas.aixdroid.data.dao.DataSetDao
 import de.levithas.aixdroid.data.model.data.DBDataSet
 import de.levithas.aixdroid.data.model.data.DBDataSetToDataSeries
@@ -17,7 +11,7 @@ import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.util.Date
 import javax.inject.Inject
@@ -26,6 +20,7 @@ class DataRepositoryImpl @Inject constructor(
     private val dao: DataSetDao,
     private val modelRepository: ModelRepository
 ) : DataRepository {
+
     override suspend fun getAllDataSets(): Flow<List<DataSet>> {
         return dao.getAllDataSets().map { flow -> flow.map { it.toDomainModel() } }
     }
@@ -34,28 +29,28 @@ class DataRepositoryImpl @Inject constructor(
         return dao.getAllDataSeries().map { flow -> flow.map { it.toDomainModel() } }
     }
 
-    override suspend fun getDataSet(id: Long): DataSet? {
-        return dao.getDataSetById(id)?.toDomainModel()
+    override suspend fun getAllDataSetsWithAutoInference(): Flow<List<DataSet>> {
+        return dao.getAllDataSetsWithAutoInference().map { flow -> flow.map { it.toDomainModel() }}
     }
 
-    override suspend fun getDataSeries(id: Long): DataSeries? {
-        return dao.getDataSeriesById(id)?.toDomainModel()
+    override suspend fun getDataSetById(id: Long): Flow<DataSet> {
+        return dao.getDataSetById(id).map { flow -> flow.toDomainModel() }
     }
 
-    override suspend fun getDataSeriesByName(name: String): DataSeries? {
-        return dao.getDataSeriesByName(name)?.toDomainModel()
+    override suspend fun getDataSeries(id: Long): Flow<DataSeries> {
+        return dao.getDataSeriesById(id).map{ flow -> flow.toDomainModel() }
+    }
+
+    override suspend fun getDataSeriesByName(name: String): Flow<DataSeries> {
+        return dao.getDataSeriesByName(name).map {flow -> flow.toDomainModel() }
     }
 
     override suspend fun getDataSetsByName(name: String): Flow<List<DataSet>> {
         return dao.getDataSetsByName(name).map { flow -> flow.map { it.toDomainModel() }}
     }
 
-    override suspend fun getAllDataSeriesNoFlow(): List<DataSeries> {
-        return dao.getAllDataSeriesNoFlow().map { it.toDomainModel() }
-    }
-
-    override suspend fun getAllDataSeriesWithName(name: String): List<DataSeries> {
-        return dao.getAllDataSeriesWithName(name).map { it.toDomainModel() }
+    override suspend fun getAllDataSeriesWithName(name: String): Flow<List<DataSeries>> {
+        return dao.getAllDataSeriesWithName(name).map { flow -> flow.map { it.toDomainModel() } }
     }
 
     override suspend fun addDataSet(dataSet: DataSet) : Long {
@@ -74,8 +69,22 @@ class DataRepositoryImpl @Inject constructor(
         return dataSetId
     }
 
-    override suspend fun assignTensorDataToDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long, tensorDataId: Long) {
-        dao.updateDataSetToDataSeries(DBDataSetToDataSeries(dataSetId = dataSetId, dataSeriesId = dataSeriesId, tensorDataId = tensorDataId))
+    override suspend fun assignTensorDataToDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long, tensorDataId: Long) : Long {
+        return if (dao.getDataSetToDataSeries(dataSetId = dataSetId, dataSeriesId = dataSeriesId).firstOrNull() == null) {
+            dao.insertDataSetToDataSeries(
+                DBDataSetToDataSeries(
+                    dataSetId = dataSetId,
+                    dataSeriesId = dataSeriesId,
+                    tensorDataId = tensorDataId)
+            )
+        } else {
+            dao.updateDataSetToDataSeries(
+                DBDataSetToDataSeries(
+                    dataSetId = dataSetId,
+                    dataSeriesId = dataSeriesId,
+                    tensorDataId = tensorDataId)
+            ).toLong()
+        }
     }
 
     override suspend fun unassignTensorDataFromDataSeriesInDataSet(dataSetId: Long, dataSeriesId: Long) {
@@ -83,18 +92,18 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun assignModelDataToDataSet(dataSetId: Long, modelDataFileName: String) {
-        val dataSet = getDataSet(dataSetId)
-        dataSet?.let {
-            dataSet.aiModel = modelRepository.getModel(modelDataFileName)
-            updateDataSet(dataSet)
+        val dataSet = getDataSetById(dataSetId).firstOrNull()
+        dataSet?.let { ds ->
+            ds.aiModel = modelRepository.getModel(modelDataFileName)
+            updateDataSet(ds)
         }
     }
 
     override suspend fun unassignModelDataFromDataSet(dataSetId: Long) {
-        val dataSet = getDataSet(dataSetId)
+        val dataSet = getDataSetById(dataSetId).firstOrNull()
         dataSet?.let {
-            dataSet.aiModel = null
-            updateDataSet(dataSet)
+            it.aiModel = null
+            updateDataSet(it)
         }
     }
 
@@ -103,9 +112,13 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addDataPoints(dataPointList: List<DataPoint>, dataSeriesId: Long): List<Long> {
-        // TODO: Check if dataSeriesId exists
-        return dataPointList.map { dataPoint ->
-            dao.insertDataPoint(dataPoint.toDBModel(dataSeriesId))
+        if (dao.getDataSeriesById(dataSeriesId).firstOrNull() != null) {
+            return dataPointList.map { dataPoint ->
+                dao.insertDataPoint(dataPoint.toDBModel(dataSeriesId))
+            }
+        } else {
+            Log.w("DataRepository", "DataSeries not found!")
+            return emptyList()
         }
     }
 
@@ -117,11 +130,11 @@ class DataRepositoryImpl @Inject constructor(
         return dao.getDataPointCountByDataSeriesId(id)
     }
 
-    override suspend fun getDataPointMaxTimeByDataSeriesId(id: Long): Long {
+    override suspend fun getDataPointMaxTimeByDataSeriesId(id: Long): Long? {
         return dao.getDataPointMaxTimeByDataSeriesId(id)
     }
 
-    override suspend fun getDataPointMinTimeByDataSeriesId(id: Long): Long {
+    override suspend fun getDataPointMinTimeByDataSeriesId(id: Long): Long? {
         return dao.getDataPointMinTimeByDataSeriesId(id)
     }
 
@@ -175,14 +188,18 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     private suspend fun DBDataSeries.toDomainModel() : DataSeries {
+        val count = dao.getDataPointCountByDataSeriesId(this.id)
+        val startTime = dao.getDataPointMinTimeByDataSeriesId(this.id)?.let { Date(it) }
+        val endTime = dao.getDataPointMaxTimeByDataSeriesId(this.id)?.let { Date(it) }
+
         return DataSeries(
             id = this.id,
             origin = this.origin,
             name = this.name,
             unit = this.unit,
-            count = dao.getDataPointCountByDataSeriesId(this.id),
-            startTime = Date(dao.getDataPointMinTimeByDataSeriesId(this.id)),
-            endTime = Date(dao.getDataPointMaxTimeByDataSeriesId(this.id))
+            count = count,
+            startTime = startTime,
+            endTime = endTime
         )
     }
 
@@ -194,19 +211,27 @@ class DataRepositoryImpl @Inject constructor(
     }
 
     private suspend fun DBDataSetWithDataSeries.toDomainModel() : DataSet {
-        val tensorDataMap = this.tensors.associate { tensor -> tensor?.id to tensor?.toDomainModel()}
-        val dataSeriesList = this.columns.map { ds -> ds.toDomainModel() }
+        val tensorDataList = this.tensors.map { it?.toDomainModel() }
+        val featureDataSeriesList = this.columns.map { ds -> ds.toDomainModel() }
+        val predictionSeries = this.dataSet.predictionDataSeriesId?.let { seriesId ->
+            dao.getDataSeriesById(seriesId).firstOrNull()?.toDomainModel()
+        }
 
         return DataSet(
             id = this.dataSet.id,
             description = this.dataSet.description,
             name = this.dataSet.name,
-            columns = dataSeriesList.associateWith { dataSeries: DataSeries ->
-                tensorDataMap[dataSeries.id]
+            columns = featureDataSeriesList.associateWith { dataSeries: DataSeries ->
+                val idx = featureDataSeriesList.indexOf(dataSeries)
+                if (tensorDataList.size > idx) {
+                    tensorDataList[idx]
+                } else {
+                    null
+                }
             },
-            predictionSeries = this.dataSet.predictionDataSeriesId?.let { dao.getDataSeriesById(it)?.toDomainModel() },
+            predictionSeries = predictionSeries,
             aiModel = this.dataSet.predictionModelFileName?.let { modelRepository.getModel(it) },
-            autoPredict = false
+            autoPredict = this.dataSet.autoPredict
         )
     }
 }

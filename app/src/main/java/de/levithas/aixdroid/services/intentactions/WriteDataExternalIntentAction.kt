@@ -13,6 +13,7 @@ import de.levithas.aixdroid.domain.usecase.datamanager.DataSetUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
@@ -40,7 +41,7 @@ class WriteDataExternalIntentAction @Inject constructor(
                         DataPoint(value = dataValueArray[index], time = Date(time))
                     }
 
-                    val dataSeries = dataSeriesUseCase.getDataSeriesByName(dataSeriesName)
+                    val dataSeries = dataSeriesUseCase.getDataSeriesByName(dataSeriesName).firstOrNull()
                     var dataSeriesId = dataSeries?.id
                     if (dataSeriesId == null) {
                         Log.i("WriteDataExternalIntentAction", "No dataSeries found with name ${dataSeriesName}! Creating one...")

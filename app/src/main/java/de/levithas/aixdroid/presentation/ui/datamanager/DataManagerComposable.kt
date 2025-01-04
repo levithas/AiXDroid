@@ -189,12 +189,14 @@ fun DataManagerComposable(
         onOpenInferenceConfiguration = {
             currentTab = DATA_SET_INFERENCE
         },
-        onSaveInferenceConfiguration = { dataSet, tensorMap ->
+        onSaveInferenceConfiguration = { dataSetChanges, tensorMap ->
+            viewModel.createUpdateDataSet(dataSetChanges)
             currentDataSet?.let {
-                viewModel.createUpdateDataSet(dataSet)
                 viewModel.assignTensorDataToDataSet(it, tensorMap)
-                currentTab = DATA_SET_DETAILS
+
+                viewModel.startInference()
             }
+            currentTab = DATA_SET_DETAILS
         },
         onCreateInferenceSeries = { dataSeries ->
             currentDataSet?.let {
@@ -204,8 +206,6 @@ fun DataManagerComposable(
                 } ?: run {
                     viewModel.addPredictionDataSeriesToDataSet(it, dataSeries)
                 }
-
-                viewModel.startInference(it)
             }
         },
 
@@ -364,8 +364,8 @@ fun DataManagerWindow(
                 DATA_SET_INFERENCE -> DataSetInferenceConfiguration(
                     modifier = modifier,
                     dataSet = currentDataSet,
-                    onSaveConfiguration = { dataSet, tensorList ->
-                        onSaveInferenceConfiguration(dataSet, tensorList)
+                    onSaveConfiguration = { dataSetChanges, tensorList ->
+                        onSaveInferenceConfiguration(dataSetChanges, tensorList)
                     },
                     onCreateInferenceDataSeries = { dataSeries ->
                         onCreateInferenceSeries(dataSeries)
@@ -785,6 +785,15 @@ fun DataSetDetails(
                                 }
                             }
                         }
+                        dataSet.predictionSeries?.let {
+                            Row(
+                                modifier = Modifier
+                            ) {
+                                Text(style = MaterialTheme.typography.titleMedium, text = "Prediction Series: ")
+                                Spacer(Modifier.width(8.dp))
+                                Text(text = it.name)
+                            }
+                        }
 
                         Row(
                             modifier = Modifier
@@ -953,9 +962,6 @@ fun DataSetInferenceSelectFeatures(
             }
         }
     }
-
-    // A List of all Features of the dataset
-    // Click on the feature selects it for the current Model Input Number
 }
 
 @Composable
@@ -1053,18 +1059,18 @@ fun DataSetInferenceConfiguration(
         when (currentStep) {
             INFERENCE_CONFIGURATION_SELECT_MODEL -> DataSetInferenceSelectModel(
                 modifier = modifier,
-                modelList = aiModelList.filter { model -> dataSet.columns.size >= model.inputs.size },
+                modelList = aiModelList.filter { model -> it.columns.size >= model.inputs.size },
             ) { modelData ->
                 selectedModel = modelData
                 currentStep = INFERENCE_CONFIGURATION_SELECT_FEATURES
             }
             INFERENCE_CONFIGURATION_SELECT_FEATURES -> DataSetInferenceSelectFeatures(
                 modifier = modifier,
-                featureList = dataSet.columns.keys.toList().filter { feature -> selectedFeatureList[feature.id] == null },
+                featureList = it.columns.keys.toList().filter { feature -> selectedFeatureList[feature.id] == null },
                 currentModelTensor = selectedModel.inputs[selectedFeatureList.size]
             ) { dataSeriesId ->
-                selectedModel.inputs[selectedFeatureList.size].id?.let {
-                    selectedFeatureList = mapOf(Pair(it, dataSeriesId)) + selectedFeatureList
+                selectedModel.inputs[selectedFeatureList.size].id?.let { id ->
+                    selectedFeatureList = mapOf(Pair(id, dataSeriesId)) + selectedFeatureList
                 }
                 
                 if (selectedFeatureList.size == selectedModel.inputs.size) {
@@ -1073,14 +1079,17 @@ fun DataSetInferenceConfiguration(
             }
             INFERENCE_CONFIGURATION_FINISH_CONFIG -> DataSetInferenceDefinePredictionConfiguration(
                 modifier = modifier,
-                currentDataSet = dataSet,
-            ) { autoPredict, dataSeries ->
-                dataSet.aiModel = selectedModel
-                dataSet.autoPredict = autoPredict
+                currentDataSet = it,
+                onSaveConfiguration = { autoPredict, dataSeries ->
+                    val dataSetChanges = it.copy()
 
-                onCreateInferenceDataSeries(dataSeries)
-                onSaveConfiguration(dataSet, selectedFeatureList)
-            }
+                    dataSetChanges.aiModel = selectedModel
+                    dataSetChanges.autoPredict = autoPredict
+
+                    onCreateInferenceDataSeries(dataSeries)
+                    onSaveConfiguration(dataSetChanges, selectedFeatureList)
+                }
+            )
         }
     }
 }

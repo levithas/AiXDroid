@@ -9,6 +9,7 @@ import de.levithas.aixdroid.R
 import de.levithas.aixdroid.data.repository.DataRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,11 +32,12 @@ class ReadDataExternalIntentAction @Inject constructor(
                 CoroutineScope(Dispatchers.IO).launch {
                     val responseIntent = Intent()
                     responseIntent.setAction(localContext.getString(R.string.aixdroid_response_action))
-                    val dataSeries = dataRepository.getDataSeriesByName(dataSeriesName)
+                    val dataSeries = dataRepository.getDataSeriesByName(dataSeriesName).firstOrNull()
                     val responseExtras = Bundle()
+
                     if (dataSeries != null) {
                         dataSeries.id?.let {
-                            val dataPointList = dataRepository.getDataPointsByDataSeriesId(it, lastTimeValue.toLong(), dataCount)
+                            val dataPointList = dataRepository.getDataPointsByDataSeriesId(it, lastTimeValue, dataCount)
                             val timeValuesArray = mutableListOf<Long>()
                             val dataValuesArray = mutableListOf<Float>()
 

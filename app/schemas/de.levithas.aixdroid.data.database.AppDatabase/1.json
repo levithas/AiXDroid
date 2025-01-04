@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "0dcc1bf46dd0833fb409fbb480f18f12",
+    "identityHash": "7378896a890ec48146cbbad062ffba2c",
     "entities": [
       {
         "tableName": "model_data",
@@ -379,7 +379,7 @@
       },
       {
         "tableName": "DBDataSetToDataSeries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataSetId` INTEGER NOT NULL, `dataSeriesId` INTEGER NOT NULL, `tensorDataId` INTEGER, PRIMARY KEY(`dataSetId`, `dataSeriesId`), FOREIGN KEY(`dataSetId`) REFERENCES `DBDataSet`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`dataSeriesId`) REFERENCES `DBDataSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataSetId` INTEGER NOT NULL, `dataSeriesId` INTEGER NOT NULL, `tensorDataId` INTEGER, PRIMARY KEY(`dataSetId`, `dataSeriesId`), FOREIGN KEY(`dataSetId`) REFERENCES `DBDataSet`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`dataSeriesId`) REFERENCES `DBDataSeries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`tensorDataId`) REFERENCES `tensor`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "dataSetId",
@@ -426,6 +426,17 @@
             "onUpdate": "NO ACTION",
             "columns": [
               "dataSeriesId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "tensor",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "tensorDataId"
             ],
             "referencedColumns": [
               "id"
@@ -491,7 +502,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0dcc1bf46dd0833fb409fbb480f18f12')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7378896a890ec48146cbbad062ffba2c')"
     ]
   }
 }

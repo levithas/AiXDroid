@@ -13,6 +13,8 @@ import de.levithas.aixdroid.data.repository.DataRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
@@ -26,7 +28,7 @@ interface DataSeriesUseCase {
     suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit)
     suspend fun checkExistingDataSeriesNames(name: String) : Boolean
     suspend fun addDataSeries(dataSeries: DataSeries) : Long
-    suspend fun getDataSeriesByName(name: String) : DataSeries?
+    suspend fun getDataSeriesByName(name: String) : Flow<DataSeries>
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
     suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, lastTime: Date, count: Int) : List<DataPoint>?
     suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : List<Long>
@@ -52,7 +54,7 @@ class DataSeriesUseCaseImpl @Inject constructor(
         return dataRepository.addDataSeries(listOf(dataSeries)).first()
     }
 
-    override suspend fun getDataSeriesByName(name: String) : DataSeries? {
+    override suspend fun getDataSeriesByName(name: String) : Flow<DataSeries> {
         return dataRepository.getDataSeriesByName(name)
     }
 
@@ -84,7 +86,7 @@ class DataSeriesUseCaseImpl @Inject constructor(
 
                     if (lineCount == 0L) {
                         if (existingDataSeriesNameMap.isEmpty()) {
-                            existingDataSeriesNameMap = dataRepository.getAllDataSeriesNoFlow().associateBy { it.name }
+                            existingDataSeriesNameMap = dataRepository.getAllDataSeries().firstOrNull()?.associateBy { it.name }?: emptyMap()
                         }
 
                         dataSeriesList = parseCSVHeaderToDataSeries(line, separatorSign)
@@ -122,8 +124,8 @@ class DataSeriesUseCaseImpl @Inject constructor(
                             // Update Metadata for DataSeries
                             dataSeriesList.forEach { dataSeries ->
                                 dataSeries.count = dataSeries.id?.let { dataRepository.getDataPointCountByDataSeriesId(it) }
-                                dataSeries.startTime = dataSeries.id?.let { Date(dataRepository.getDataPointMinTimeByDataSeriesId(it)) }
-                                dataSeries.endTime = dataSeries.id?.let { Date(dataRepository.getDataPointMaxTimeByDataSeriesId(it)) }
+                                dataSeries.startTime = dataSeries.id?.let { dataRepository.getDataPointMinTimeByDataSeriesId(it)?.let { Date(it)} }
+                                dataSeries.endTime = dataSeries.id?.let { dataRepository.getDataPointMaxTimeByDataSeriesId(it)?.let { Date(it)} }
                                 // Replace the old dataSeries with new dataSeries
                                 dataRepository.updateDataSeries(dataSeries)
                             }
@@ -148,7 +150,7 @@ class DataSeriesUseCaseImpl @Inject constructor(
         val result: Boolean
 
         withContext(Dispatchers.IO) {
-            existingDataSeriesNameMap = dataRepository.getAllDataSeriesNoFlow().associateBy { it.name }
+            existingDataSeriesNameMap = dataRepository.getAllDataSeries().firstOrNull()?.associateBy { it.name }?: emptyMap()
             result = existingDataSeriesNameMap[name] != null
         }
 

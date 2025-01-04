@@ -9,11 +9,9 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
-import de.levithas.aixdroid.R
 import de.levithas.aixdroid.data.repository.ExternalIntentRepository
 import de.levithas.aixdroid.domain.model.ExternalIntentConfiguration
 import de.levithas.aixdroid.services.intentactions.InferenceExternalIntentAction
@@ -24,7 +22,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class ExternalIntentService : LifecycleService() {
+class ExternalIntentService : AbstractService() {
 
     @Inject
     lateinit var intentRepository: ExternalIntentRepository
@@ -77,17 +75,9 @@ class ExternalIntentService : LifecycleService() {
     }
 
     private fun createNotification(): Notification {
-        val notificationChannelId = "service_channel"
+        val notificationChannel = getNotificationChannel()
 
-        val channel = NotificationChannel(
-            notificationChannelId,
-            "Service",
-            NotificationManager.IMPORTANCE_LOW
-        )
-        val manager = getSystemService(NotificationManager::class.java)
-        manager?.createNotificationChannel(channel)
-
-        return NotificationCompat.Builder(this, notificationChannelId)
+        return NotificationCompat.Builder(this, notificationChannel.id)
             .setContentTitle("External Intent Service")
             .setContentText("Service is running!")
             .build()
