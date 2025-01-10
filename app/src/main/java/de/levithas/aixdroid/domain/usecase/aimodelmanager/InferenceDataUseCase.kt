@@ -33,6 +33,8 @@ class InferenceDataUseCaseImpl @Inject constructor(
         dataSet.aiModel?.fileName?.let { fileName ->
             aiModelUseCase.openModelFile(context, fileName)?.let { fileContent ->
                 Interpreter(fileContent)
+//                val options: Options = InterpreterApi.Options()
+//                InterpreterApi.create(fileContent, options)
             }?.let { interpreter ->
                 dataSet.predictionSeries?.let { predictionSeries ->
 

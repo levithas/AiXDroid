@@ -519,7 +519,7 @@ fun DataSeriesItem(
             .fillMaxWidth()
             .padding(8.dp)
             .height(82.dp),
-        colors = MaterialTheme.customColors.dataItemSelectedCard
+        colors = MaterialTheme.customColors.itemSelectedCard
     ) {
         Row(
             modifier = Modifier
@@ -541,7 +541,7 @@ fun DataSeriesItem(
                             onLongPress = { onCheckedChanged(true) },
                         )
                     } else modifier.fillMaxHeight(),
-                colors = MaterialTheme.customColors.dataSeriesItemCard
+                colors = MaterialTheme.customColors.itemCard
             ) {
                 Column(
                     modifier = Modifier
@@ -578,7 +578,7 @@ fun DataSetItem(
             .clickable {
                 onOpenDataSetDetails()
             },
-        colors = MaterialTheme.customColors.dataSetItemCard
+        colors = MaterialTheme.customColors.itemCard
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -901,7 +901,7 @@ fun DataSetInferenceFeatureItem(
             .clickable {
                 dataSeriesItem.id?.let { onSelectDataSeries(it) }
             },
-        colors = MaterialTheme.customColors.dataSetItemCard,
+        colors = MaterialTheme.customColors.itemCard,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -1030,7 +1030,8 @@ fun DataSetInferenceDefinePredictionConfiguration(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = isSaveEnabled
+            enabled = isSaveEnabled,
+            colors = MaterialTheme.customColors.standardButton
         ) {
             Text("Save Configuration")
         }

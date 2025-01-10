@@ -6,10 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -45,12 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import de.levithas.aixdroid.R
 import de.levithas.aixdroid.domain.model.ExternalIntentConfiguration
-import de.levithas.aixdroid.domain.model.ModelData
 import de.levithas.aixdroid.presentation.theme.AiXDroidTheme
 import de.levithas.aixdroid.presentation.theme.customColors
-import de.levithas.aixdroid.presentation.ui.datamanager.DataManagerComposable
-import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelItem
-import de.levithas.aixdroid.presentation.ui.modelmanager.AIModelItemList
 
 private const val TAB_OVERVIEW = 0
 private const val TAB_DETAIL_VIEW = 1
@@ -189,7 +182,7 @@ fun ExternalIntentItem(
             .clickable {
                 onClickItem()
             },
-        colors = MaterialTheme.customColors.dataSetItemCard,
+        colors = MaterialTheme.customColors.itemCard,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
