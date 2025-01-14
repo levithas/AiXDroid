@@ -1055,26 +1055,26 @@ fun DataSetInferenceConfiguration(
         var currentStep by remember { mutableStateOf(INFERENCE_CONFIGURATION_SELECT_MODEL) }
 
         var selectedModel by remember { mutableStateOf(ModelData("")) }
-        var selectedFeatureList by rememberSaveable { mutableStateOf<Map<Long, Long>>(emptyMap()) }
+        var selectedFeatureList by remember { mutableStateOf<Map<Long, Long>>(emptyMap()) }
 
         when (currentStep) {
             INFERENCE_CONFIGURATION_SELECT_MODEL -> DataSetInferenceSelectModel(
                 modifier = modifier,
-                modelList = aiModelList.filter { model -> it.columns.size >= model.inputs.size },
+                modelList = aiModelList.filter { model -> it.columns.size >= (model.inputs.size-2) }, // 2 less to ignore time tensors
             ) { modelData ->
                 selectedModel = modelData
                 currentStep = INFERENCE_CONFIGURATION_SELECT_FEATURES
             }
             INFERENCE_CONFIGURATION_SELECT_FEATURES -> DataSetInferenceSelectFeatures(
                 modifier = modifier,
-                featureList = it.columns.keys.toList().filter { feature -> selectedFeatureList[feature.id] == null },
-                currentModelTensor = selectedModel.inputs[selectedFeatureList.size]
+                featureList = it.columns.keys.toList().filter { feature -> !selectedFeatureList.containsValue(feature.id) },
+                currentModelTensor = selectedModel.inputs.drop(2)[selectedFeatureList.size] // First 2 time tensors are ignored
             ) { dataSeriesId ->
-                selectedModel.inputs[selectedFeatureList.size].id?.let { id ->
+                selectedModel.inputs[selectedFeatureList.size+2].id?.let { id ->
                     selectedFeatureList = mapOf(Pair(id, dataSeriesId)) + selectedFeatureList
                 }
                 
-                if (selectedFeatureList.size == selectedModel.inputs.size) {
+                if (selectedFeatureList.size == selectedModel.inputs.size-2) {
                     currentStep = INFERENCE_CONFIGURATION_FINISH_CONFIG
                 }
             }

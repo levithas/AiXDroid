@@ -2,7 +2,6 @@ package de.levithas.aixdroid.domain.usecase.aimodelmanager
 
 import android.content.Context
 import android.util.Log
-import com.google.flatbuffers.FlatBufferBuilder.ByteBufferFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSet
@@ -21,9 +20,6 @@ class InferenceDataUseCaseImplV2 @Inject constructor(
     private val aiModelUseCase: AIModelUseCase
 ) : InferenceDataUseCase {
 
-    private val Iteration_Time = 24*3600L
-
-
     override suspend fun startInference(dataSet: DataSet, onProgressUpdate: (Float) -> Unit) {
         dataSet.aiModel?.let { aiModel ->
             aiModelUseCase.openModelFile(context, aiModel.fileName)?.let { fileContent ->
@@ -34,12 +30,17 @@ class InferenceDataUseCaseImplV2 @Inject constructor(
                             val dataSeriesWithTensor = dataSet.columns.filter { it.value != null }
                             val startDate = dataSeriesWithTensor.minOf { it.key.startTime?.time ?:Long.MAX_VALUE }
                             val endDate = dataSeriesWithTensor.maxOf { it.key.endTime?.time ?:Long.MIN_VALUE }
-                            val labelCount = output.shape[0]
+                            val labelCount = output.shape[1]
+                            val timePeriod = aiModel.timePeriod * 1000
+                            val n_steps = aiModel.n_steps
+
 
                             // Iterating in days
-                            for (currentDate in startDate until endDate step Iteration_Time) {
+                            for (currentDate in startDate until endDate step timePeriod.toLong()) {
                                 val dataPointList = mutableListOf<DataPoint>()
-                                val endTime = min(currentDate + Iteration_Time, endDate)
+                                val endTime = min(currentDate + timePeriod, endDate)
+
+                                Log.i("InferenceDataUseCase", "Start Iteration from $currentDate to $endTime")
 
                                 val inputData = dataSeriesWithTensor.map { dataSeriesUseCase.getDataPointsFromDataSeriesInDateRange(
                                     dataSeries = it.key,
@@ -62,31 +63,40 @@ class InferenceDataUseCaseImplV2 @Inject constructor(
 
                                         // Merge times into dataArray
                                         val dataArrays = filteredData.mapValues { (timeStamp, dataPoints) ->
-                                            getTimeDataArray(timeStamp) + dataPoints.map { it.value }
+                                            getTimeDataArray(timeStamp, timePeriod) + dataPoints.map { it.value }
                                         }
 
                                         // Batching data
-                                        for (currentTime in currentDate until endTime) {
+                                        for (currentTime in currentDate until endTime step 1000) {
                                             val dataBatch = dataArrays.filter {
-                                                it.key >= currentTime && it.key < currentTime + aiModel.n_steps
+                                                it.key >= currentTime && it.key < currentTime + n_steps*1000
                                             }.values.toTypedArray()
 
-                                            if (dataBatch.size == aiModel.n_steps) {
+                                            if (dataBatch.size == n_steps) {
 
                                                 val inputByteBuffer = getByteBufferFromDataBatch(dataBatch)
-                                                val outputByteBuffer = ByteBuffer.allocateDirect(labelCount * 4)
+                                                val outputByteBuffer = mutableMapOf<Int, Any>()
+                                                outputByteBuffer[0] = ByteBuffer.allocateDirect(labelCount * 4)
 
-                                                interpreter.run(inputByteBuffer, outputByteBuffer)
-                                                dataPointList.add(getDataPointFromByteBuffer(outputByteBuffer, labelCount, Date(currentTime)))
+                                                interpreter.runForMultipleInputsOutputs(inputByteBuffer, outputByteBuffer)
+                                                dataPointList.add(getDataPointFromByteBuffer(
+                                                    outputByteBuffer[0] as ByteBuffer,
+                                                    labelCount,
+                                                    Date(currentTime)
+                                                ))
+                                            } else
+                                            {
+                                                Log.w("InferenceDataUseCase", "Not enough datapoints for Batch! n_steps: ${aiModel.n_steps} != " +
+                                                        "${dataBatch.size}")
                                             }
+                                            onProgressUpdate((currentTime-startDate) / (endDate-startDate).toFloat())
                                         }
                                     }
+                                    Log.i("InferenceDataUseCase", "Process finished! ${dataPointList.size} new Datapoints")
                                     predictionSeries.id?.let { dataSeriesUseCase.addDataPoints(it, dataPointList) }
                                 } else {
                                     Log.w("InferenceDataUseCase", "Datenreihe konnte nicht gefunden werden!")
                                 }
-
-                                onProgressUpdate((currentDate-startDate) / (endDate-startDate).toFloat())
                             }
                         }
                     }
@@ -96,21 +106,27 @@ class InferenceDataUseCaseImplV2 @Inject constructor(
         }
     }
 
-    private fun getTimeDataArray(timestamp: Long) : Array<Float> {
-        return arrayOf(sin(timestamp.toFloat()), cos(timestamp.toFloat()))
+    private fun getTimeDataArray(timestamp: Long, timePeriod: Int) : Array<Float> {
+        return arrayOf(
+            sin(timestamp * (2*Math.PI)/timePeriod.toFloat()).toFloat(),
+            cos(timestamp * (2*Math.PI)/timePeriod.toFloat()).toFloat()
+        )
     }
 
 
-    private fun getByteBufferFromDataBatch(dataBatch: Array<Array<Float>>) : ByteBuffer {
-        val byteBuffer = ByteBuffer.allocate(dataBatch.sumOf { it.size } * 4)
+    private fun getByteBufferFromDataBatch(dataBatch: Array<Array<Float>>) : Array<ByteBuffer> {
+        val byteBufferArray = mutableListOf<ByteBuffer>()
 
         dataBatch.forEach { data ->
-            data.forEach { entry ->
-                byteBuffer.putFloat(entry)
+            data.forEachIndexed { idx, entry ->
+                if (byteBufferArray.size <= idx) {
+                    byteBufferArray.add(ByteBuffer.allocate(dataBatch.size * 4))
+                }
+                byteBufferArray[idx % data.size].putFloat(entry)
             }
         }
 
-        return byteBuffer
+        return byteBufferArray.toTypedArray()
     }
 
     private fun getSparseCategoricalCrossentropy(pseudoProbabilities: FloatArray) : Int {

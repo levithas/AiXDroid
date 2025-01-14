@@ -324,6 +324,20 @@ fun AIModelDetailScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(text = modelData.version)
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Text(style = MaterialTheme.typography.titleMedium, text = "Time Period:")
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = modelData.timePeriod.toString())
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Text(style = MaterialTheme.typography.titleMedium, text = "N-Steps:")
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = modelData.n_steps.toString())
+                    }
                 }
 
             }
@@ -333,7 +347,7 @@ fun AIModelDetailScreen(
                 Text("Input Tensors", style = MaterialTheme.typography.titleMedium)
                 TensorTable(Modifier, modelData.inputs)
                 Spacer(Modifier.height(16.dp))
-                Text("Outputput Tensors", style = MaterialTheme.typography.titleMedium)
+                Text("Output Tensors", style = MaterialTheme.typography.titleMedium)
                 modelData.output?.let { TensorTable(Modifier, listOf(it), column1Weight = .7f, column2Weight = .3f) }
             }
 

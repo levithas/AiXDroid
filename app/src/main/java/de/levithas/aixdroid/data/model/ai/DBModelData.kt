@@ -12,6 +12,6 @@ data class DBModelData(
     val author: String,
     val licence: String,
 
-    val timePeriod: Float,
+    val timePeriod: Int,
     val n_steps: Int
 )

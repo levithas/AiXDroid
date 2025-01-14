@@ -18,6 +18,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
+import java.util.Dictionary
 import java.util.UUID
 import javax.inject.Inject
 
@@ -30,6 +31,10 @@ interface AIModelUseCase {
 class AIModelUseCaseImpl @Inject constructor(
     private val modelRepository: ModelRepository,
 ) : AIModelUseCase {
+
+    private val defaultNSteps = 120
+    private val defaultTimePeriod = 24 * 3600
+
     override suspend fun addNewModel(context: Context, uri: Uri) {
         try {
             copyFileToAppInternalStorage(context, uri)?.let { fileName ->
@@ -65,14 +70,17 @@ class AIModelUseCaseImpl @Inject constructor(
                         max = 0.0f,
                     )
 
+                    val parsedDescription = parseDescription(extractor.modelMetadata.description())
+
                     val modelData = ModelData(
                         fileName = fileName,
                         name = extractor.modelMetadata.name() ?: "",
-                        description = extractor.modelMetadata.description() ?: "",
+                        description = parsedDescription["description"] ?: "",
                         version = extractor.modelMetadata.version() ?: "",
                         author = extractor.modelMetadata.author() ?: "",
                         licence = extractor.modelMetadata.license() ?: "",
-                        timePeriod = 0.0f,
+                        timePeriod = parsedDescription["timePeriod"]?.toIntOrNull() ?: defaultTimePeriod,
+                        n_steps = parsedDescription["n_steps"]?.toIntOrNull() ?: defaultNSteps,
                         inputs = inputList,
                         output = output
                     )
@@ -88,6 +96,17 @@ class AIModelUseCaseImpl @Inject constructor(
             // TODO: Log Fehler auswurf und gib es an den User weiter
             // TODO: Ergänze weitere Exceptions (IOException,...) für besseres Fehlermanagement
         }
+    }
+
+    private fun parseDescription(description: String) : Map<String, String> {
+        val descriptionDict = mutableMapOf<String, String>()
+        description.split("\n").forEach { line ->
+            val entries = line.split(":")
+            if (entries.size == 2) {
+                descriptionDict[entries[0].trim()] = entries[1].trim()
+            }
+        }
+        return descriptionDict
     }
 
     private fun copyFileToAppInternalStorage(context: Context, uri: Uri) : String? {
