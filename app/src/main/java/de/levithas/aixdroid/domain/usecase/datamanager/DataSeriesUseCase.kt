@@ -31,6 +31,7 @@ interface DataSeriesUseCase {
     suspend fun getDataSeriesByName(name: String) : Flow<DataSeries>
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
     suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, lastTime: Date, count: Int) : List<DataPoint>?
+    suspend fun getDataPointsFromDataSeriesInDateRange(dataSeries: DataSeries, startTime: Date, endTime: Date) : List<DataPoint>?
     suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : List<Long>
     suspend fun deleteDataSeries(dataSeriesId: Long)
 }
@@ -64,6 +65,10 @@ class DataSeriesUseCaseImpl @Inject constructor(
 
     override suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, lastTime: Date, count: Int) : List<DataPoint>? {
         return dataSeries.id?.let { dataRepository.getDataPointsByDataSeriesId(it, lastTime.time, count) }
+    }
+
+    override suspend fun getDataPointsFromDataSeriesInDateRange(dataSeries: DataSeries, startTime: Date, endTime: Date): List<DataPoint>? {
+        return dataSeries.id?.let { dataRepository.getDataPointsByDataSeriesIdInDateRange(it, startTime.time, endTime.time) }
     }
 
     override suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit) {

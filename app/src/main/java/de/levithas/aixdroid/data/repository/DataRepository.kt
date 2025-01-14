@@ -16,6 +16,7 @@ interface DataRepository {
     suspend fun getDataSetById(id: Long) : Flow<DataSet>
     suspend fun getDataSetsByName(name: String) : Flow<List<DataSet>>
     suspend fun getDataPointsByDataSeriesId(id: Long, lastTime: Long, count: Int) : List<DataPoint>
+    suspend fun getDataPointsByDataSeriesIdInDateRange(id: Long, startTime: Long, endTime: Long) : List<DataPoint>
     suspend fun getDataSeries(id: Long) : Flow<DataSeries>
     suspend fun getDataPointCountByDataSeriesId(id: Long) : Long
     suspend fun getDataPointMaxTimeByDataSeriesId(id: Long): Long?

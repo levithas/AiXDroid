@@ -33,8 +33,6 @@ class InferenceDataUseCaseImpl @Inject constructor(
         dataSet.aiModel?.fileName?.let { fileName ->
             aiModelUseCase.openModelFile(context, fileName)?.let { fileContent ->
                 Interpreter(fileContent)
-//                val options: Options = InterpreterApi.Options()
-//                InterpreterApi.create(fileContent, options)
             }?.let { interpreter ->
                 dataSet.predictionSeries?.let { predictionSeries ->
 
@@ -141,7 +139,7 @@ class InferenceDataUseCaseImpl @Inject constructor(
         val inputVector = arrayOf(transformTimePeriodicity(timeStamp, 24*3600000.0f)) + inputFeatures
         val outputVector = ByteBuffer.allocateDirect(4) // 4 Byte for 1 Output
 
-        interpreter.run(inputVector[1], outputVector)
+        interpreter.run(inputVector, outputVector)
 
         return Pair(timeStamp, outputVector.getFloat(0))
     }

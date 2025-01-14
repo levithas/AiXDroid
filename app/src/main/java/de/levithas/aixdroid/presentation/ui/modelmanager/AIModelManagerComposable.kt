@@ -334,7 +334,7 @@ fun AIModelDetailScreen(
                 TensorTable(Modifier, modelData.inputs)
                 Spacer(Modifier.height(16.dp))
                 Text("Outputput Tensors", style = MaterialTheme.typography.titleMedium)
-                TensorTable(Modifier, modelData.outputs, column1Weight = .7f, column2Weight = .3f)
+                modelData.output?.let { TensorTable(Modifier, listOf(it), column1Weight = .7f, column2Weight = .3f) }
             }
 
             Button(
@@ -463,8 +463,7 @@ val modelConfigurationPreview = ModelData(
             max = 200.0f,
         )
     ).toList(),
-    outputs = arrayOf(
-        TensorData(
+    output = TensorData(
             id = 2,
             name = "Antwort",
             description = "Enthält die Nachricht des Modells an dich",
@@ -472,17 +471,7 @@ val modelConfigurationPreview = ModelData(
             shape = arrayOf(10,2,300).toList(),
             min = 0.0f,
             max = 1.0f,
-        ),
-        TensorData(
-            id = 32,
-            name = "Zerstörungsthreshold",
-            description = "Der Wert gibt an, wie sehr das Modell die Welt vernichten möchte (0 = garnicht, 1 = sofort)",
-            type = TensorType.FLOAT32,
-            shape = arrayOf(1,2,300).toList(),
-            min = 0.0f,
-            max = 1.0f,
         )
-    ).toList()
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)

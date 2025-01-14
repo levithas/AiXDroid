@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "7378896a890ec48146cbbad062ffba2c",
+    "identityHash": "be88b7531864748fddfed9743f53a3d4",
     "entities": [
       {
         "tableName": "model_data",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileName` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `version` TEXT NOT NULL, `author` TEXT NOT NULL, `licence` TEXT NOT NULL, `timePeriod` REAL NOT NULL, PRIMARY KEY(`fileName`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileName` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `version` TEXT NOT NULL, `author` TEXT NOT NULL, `licence` TEXT NOT NULL, `timePeriod` REAL NOT NULL, `n_steps` INTEGER NOT NULL, PRIMARY KEY(`fileName`))",
         "fields": [
           {
             "fieldPath": "fileName",
@@ -48,6 +48,12 @@
             "fieldPath": "timePeriod",
             "columnName": "timePeriod",
             "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "n_steps",
+            "columnName": "n_steps",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -502,7 +508,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7378896a890ec48146cbbad062ffba2c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'be88b7531864748fddfed9743f53a3d4')"
     ]
   }
 }

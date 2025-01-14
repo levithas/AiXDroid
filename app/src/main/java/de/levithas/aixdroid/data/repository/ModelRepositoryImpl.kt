@@ -22,13 +22,12 @@ fun DBModelWithTensors.toDomainModel() : ModelData {
         licence = this.modelData.licence,
 
         timePeriod = this.modelData.timePeriod,
+        n_steps = this.modelData.n_steps,
 
         inputs = this.inputs.map {
             it.toDomainModel()
         },
-        outputs = this.outputs.map {
-            it.toDomainModel()
-        },
+        output = this.output?.toDomainModel()
     )
 }
 
@@ -55,7 +54,8 @@ fun ModelData.toDBModel(): DBModelData {
         version = this.version,
         author = this.author,
         licence = this.licence,
-        timePeriod = this.timePeriod
+        timePeriod = this.timePeriod,
+        n_steps = this.n_steps
     )
 }
 
@@ -87,13 +87,13 @@ class ModelRepositoryImpl @Inject constructor(
                 )
             )
         }
-        for (output in model.outputs) {
+        model.output?.let { output ->
             val tensorId = dao.insertTensorData(output.toDBModel())
             dao.insertModelDataOutput(
                 DBModelDataOutput(
-                fileName = dbModel.fileName,
-                id = tensorId
-            )
+                    fileName = dbModel.fileName,
+                    id = tensorId
+                )
             )
         }
     }

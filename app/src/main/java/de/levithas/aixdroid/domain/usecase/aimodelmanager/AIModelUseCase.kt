@@ -41,7 +41,6 @@ class AIModelUseCaseImpl @Inject constructor(
                     val extractor = MetadataExtractor(fileContent)
 
                     val inputList: MutableList<TensorData> = emptyList<TensorData>().toMutableList()
-                    val outputList: MutableList<TensorData> = emptyList<TensorData>().toMutableList()
 
                     for (idx in 0..<extractor.inputTensorCount) {
                         inputList.add(
@@ -56,19 +55,15 @@ class AIModelUseCaseImpl @Inject constructor(
                             )
                         )
                     }
-                    for (idx in 0..<extractor.outputTensorCount) {
-                        outputList.add(
-                            TensorData(
-                                id = null,
-                                name = extractor.getOutputTensorMetadata(idx)?.name() ?: "",
-                                description = extractor.getOutputTensorMetadata(idx)?.description() ?: "",
-                                type = extractor.getOutputTensorType(idx),
-                                shape = extractor.getOutputTensorShape(idx).toList(),
-                                min = 0.0f,
-                                max = 0.0f,
-                            )
-                        )
-                    }
+                    val output = TensorData(
+                        id = null,
+                        name = extractor.getOutputTensorMetadata(0)?.name() ?: "",
+                        description = extractor.getOutputTensorMetadata(0)?.description() ?: "",
+                        type = extractor.getOutputTensorType(0),
+                        shape = extractor.getOutputTensorShape(0).toList(),
+                        min = 0.0f,
+                        max = 0.0f,
+                    )
 
                     val modelData = ModelData(
                         fileName = fileName,
@@ -79,7 +74,7 @@ class AIModelUseCaseImpl @Inject constructor(
                         licence = extractor.modelMetadata.license() ?: "",
                         timePeriod = 0.0f,
                         inputs = inputList,
-                        outputs = outputList
+                        output = output
                     )
 
                     modelRepository.addModel(modelData)
