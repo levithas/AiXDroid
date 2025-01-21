@@ -189,12 +189,14 @@ fun DataManagerComposable(
         onOpenInferenceConfiguration = {
             currentTab = DATA_SET_INFERENCE
         },
-        onSaveInferenceConfiguration = { dataSet, tensorMap ->
+        onSaveInferenceConfiguration = { dataSetChanges, tensorMap ->
+            viewModel.createUpdateDataSet(dataSetChanges)
             currentDataSet?.let {
-                viewModel.createUpdateDataSet(dataSet)
                 viewModel.assignTensorDataToDataSet(it, tensorMap)
-                currentTab = DATA_SET_DETAILS
+
+                viewModel.startInference()
             }
+            currentTab = DATA_SET_DETAILS
         },
         onCreateInferenceSeries = { dataSeries ->
             currentDataSet?.let {
@@ -204,8 +206,6 @@ fun DataManagerComposable(
                 } ?: run {
                     viewModel.addPredictionDataSeriesToDataSet(it, dataSeries)
                 }
-
-                viewModel.startInference(it)
             }
         },
 
@@ -364,8 +364,8 @@ fun DataManagerWindow(
                 DATA_SET_INFERENCE -> DataSetInferenceConfiguration(
                     modifier = modifier,
                     dataSet = currentDataSet,
-                    onSaveConfiguration = { dataSet, tensorList ->
-                        onSaveInferenceConfiguration(dataSet, tensorList)
+                    onSaveConfiguration = { dataSetChanges, tensorList ->
+                        onSaveInferenceConfiguration(dataSetChanges, tensorList)
                     },
                     onCreateInferenceDataSeries = { dataSeries ->
                         onCreateInferenceSeries(dataSeries)
@@ -519,7 +519,7 @@ fun DataSeriesItem(
             .fillMaxWidth()
             .padding(8.dp)
             .height(82.dp),
-        colors = MaterialTheme.customColors.dataItemSelectedCard
+        colors = MaterialTheme.customColors.itemSelectedCard
     ) {
         Row(
             modifier = Modifier
@@ -541,7 +541,7 @@ fun DataSeriesItem(
                             onLongPress = { onCheckedChanged(true) },
                         )
                     } else modifier.fillMaxHeight(),
-                colors = MaterialTheme.customColors.dataSeriesItemCard
+                colors = MaterialTheme.customColors.itemCard
             ) {
                 Column(
                     modifier = Modifier
@@ -578,7 +578,7 @@ fun DataSetItem(
             .clickable {
                 onOpenDataSetDetails()
             },
-        colors = MaterialTheme.customColors.dataSetItemCard
+        colors = MaterialTheme.customColors.itemCard
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -785,6 +785,15 @@ fun DataSetDetails(
                                 }
                             }
                         }
+                        dataSet.predictionSeries?.let {
+                            Row(
+                                modifier = Modifier
+                            ) {
+                                Text(style = MaterialTheme.typography.titleMedium, text = "Prediction Series: ")
+                                Spacer(Modifier.width(8.dp))
+                                Text(text = it.name)
+                            }
+                        }
 
                         Row(
                             modifier = Modifier
@@ -892,7 +901,7 @@ fun DataSetInferenceFeatureItem(
             .clickable {
                 dataSeriesItem.id?.let { onSelectDataSeries(it) }
             },
-        colors = MaterialTheme.customColors.dataSetItemCard,
+        colors = MaterialTheme.customColors.itemCard,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -953,9 +962,6 @@ fun DataSetInferenceSelectFeatures(
             }
         }
     }
-
-    // A List of all Features of the dataset
-    // Click on the feature selects it for the current Model Input Number
 }
 
 @Composable
@@ -1024,7 +1030,8 @@ fun DataSetInferenceDefinePredictionConfiguration(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = isSaveEnabled
+            enabled = isSaveEnabled,
+            colors = MaterialTheme.customColors.standardButton
         ) {
             Text("Save Configuration")
         }
@@ -1048,39 +1055,42 @@ fun DataSetInferenceConfiguration(
         var currentStep by remember { mutableStateOf(INFERENCE_CONFIGURATION_SELECT_MODEL) }
 
         var selectedModel by remember { mutableStateOf(ModelData("")) }
-        var selectedFeatureList by rememberSaveable { mutableStateOf<Map<Long, Long>>(emptyMap()) }
+        var selectedFeatureList by remember { mutableStateOf<Map<Long, Long>>(emptyMap()) }
 
         when (currentStep) {
             INFERENCE_CONFIGURATION_SELECT_MODEL -> DataSetInferenceSelectModel(
                 modifier = modifier,
-                modelList = aiModelList.filter { model -> dataSet.columns.size >= model.inputs.size },
+                modelList = aiModelList.filter { model -> it.columns.size >= (model.inputs.size-2) }, // 2 less to ignore time tensors
             ) { modelData ->
                 selectedModel = modelData
                 currentStep = INFERENCE_CONFIGURATION_SELECT_FEATURES
             }
             INFERENCE_CONFIGURATION_SELECT_FEATURES -> DataSetInferenceSelectFeatures(
                 modifier = modifier,
-                featureList = dataSet.columns.keys.toList().filter { feature -> selectedFeatureList[feature.id] == null },
-                currentModelTensor = selectedModel.inputs[selectedFeatureList.size]
+                featureList = it.columns.keys.toList().filter { feature -> !selectedFeatureList.containsValue(feature.id) },
+                currentModelTensor = selectedModel.inputs.drop(2)[selectedFeatureList.size] // First 2 time tensors are ignored
             ) { dataSeriesId ->
-                selectedModel.inputs[selectedFeatureList.size].id?.let {
-                    selectedFeatureList = mapOf(Pair(it, dataSeriesId)) + selectedFeatureList
+                selectedModel.inputs[selectedFeatureList.size+2].id?.let { id ->
+                    selectedFeatureList = mapOf(Pair(id, dataSeriesId)) + selectedFeatureList
                 }
                 
-                if (selectedFeatureList.size == selectedModel.inputs.size) {
+                if (selectedFeatureList.size == selectedModel.inputs.size-2) {
                     currentStep = INFERENCE_CONFIGURATION_FINISH_CONFIG
                 }
             }
             INFERENCE_CONFIGURATION_FINISH_CONFIG -> DataSetInferenceDefinePredictionConfiguration(
                 modifier = modifier,
-                currentDataSet = dataSet,
-            ) { autoPredict, dataSeries ->
-                dataSet.aiModel = selectedModel
-                dataSet.autoPredict = autoPredict
+                currentDataSet = it,
+                onSaveConfiguration = { autoPredict, dataSeries ->
+                    val dataSetChanges = it.copy()
 
-                onCreateInferenceDataSeries(dataSeries)
-                onSaveConfiguration(dataSet, selectedFeatureList)
-            }
+                    dataSetChanges.aiModel = selectedModel
+                    dataSetChanges.autoPredict = autoPredict
+
+                    onCreateInferenceDataSeries(dataSeries)
+                    onSaveConfiguration(dataSetChanges, selectedFeatureList)
+                }
+            )
         }
     }
 }

@@ -53,6 +53,7 @@ dependencies {
 
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.lifecycle.service)
 
     val room_version = "2.6.1"
 

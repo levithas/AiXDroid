@@ -11,6 +11,7 @@ import de.levithas.aixdroid.data.repository.ModelRepository
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.AIModelUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCase
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCaseImpl
+import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCaseImplV2
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCaseImpl
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSetUseCase
@@ -64,7 +65,7 @@ object DataManagerUseCaseModule {
         dataRepository: DataRepository,
         modelRepository: ModelRepository
     ): InferenceDataUseCase {
-        return InferenceDataUseCaseImpl(
+        return InferenceDataUseCaseImplV2(
             context, DataSeriesUseCaseImpl(
                 context,
                 dataRepository,

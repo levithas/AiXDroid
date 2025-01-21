@@ -17,5 +17,5 @@ data class DBModelWithTensors(
         entityColumn = "id",
         associateBy = Junction(DBModelDataOutput::class)
     )
-    val outputs: List<DBTensorData> = emptyList()
+    val output: DBTensorData? = null
 )

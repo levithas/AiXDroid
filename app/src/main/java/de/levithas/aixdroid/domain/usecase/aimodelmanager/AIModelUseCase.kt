@@ -18,6 +18,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
+import java.util.Dictionary
 import java.util.UUID
 import javax.inject.Inject
 
@@ -30,6 +31,10 @@ interface AIModelUseCase {
 class AIModelUseCaseImpl @Inject constructor(
     private val modelRepository: ModelRepository,
 ) : AIModelUseCase {
+
+    private val defaultNSteps = 120
+    private val defaultTimePeriod = 24 * 3600
+
     override suspend fun addNewModel(context: Context, uri: Uri) {
         try {
             copyFileToAppInternalStorage(context, uri)?.let { fileName ->
@@ -41,7 +46,6 @@ class AIModelUseCaseImpl @Inject constructor(
                     val extractor = MetadataExtractor(fileContent)
 
                     val inputList: MutableList<TensorData> = emptyList<TensorData>().toMutableList()
-                    val outputList: MutableList<TensorData> = emptyList<TensorData>().toMutableList()
 
                     for (idx in 0..<extractor.inputTensorCount) {
                         inputList.add(
@@ -56,30 +60,29 @@ class AIModelUseCaseImpl @Inject constructor(
                             )
                         )
                     }
-                    for (idx in 0..<extractor.outputTensorCount) {
-                        outputList.add(
-                            TensorData(
-                                id = null,
-                                name = extractor.getOutputTensorMetadata(idx)?.name() ?: "",
-                                description = extractor.getOutputTensorMetadata(idx)?.description() ?: "",
-                                type = extractor.getOutputTensorType(idx),
-                                shape = extractor.getOutputTensorShape(idx).toList(),
-                                min = 0.0f,
-                                max = 0.0f,
-                            )
-                        )
-                    }
+                    val output = TensorData(
+                        id = null,
+                        name = extractor.getOutputTensorMetadata(0)?.name() ?: "",
+                        description = extractor.getOutputTensorMetadata(0)?.description() ?: "",
+                        type = extractor.getOutputTensorType(0),
+                        shape = extractor.getOutputTensorShape(0).toList(),
+                        min = 0.0f,
+                        max = 0.0f,
+                    )
+
+                    val parsedDescription = parseDescription(extractor.modelMetadata.description())
 
                     val modelData = ModelData(
                         fileName = fileName,
                         name = extractor.modelMetadata.name() ?: "",
-                        description = extractor.modelMetadata.description() ?: "",
+                        description = parsedDescription["description"] ?: "",
                         version = extractor.modelMetadata.version() ?: "",
                         author = extractor.modelMetadata.author() ?: "",
                         licence = extractor.modelMetadata.license() ?: "",
-                        timePeriod = 0.0f,
+                        timePeriod = parsedDescription["timePeriod"]?.toIntOrNull() ?: defaultTimePeriod,
+                        n_steps = parsedDescription["n_steps"]?.toIntOrNull() ?: defaultNSteps,
                         inputs = inputList,
-                        outputs = outputList
+                        output = output
                     )
 
                     modelRepository.addModel(modelData)
@@ -93,6 +96,17 @@ class AIModelUseCaseImpl @Inject constructor(
             // TODO: Log Fehler auswurf und gib es an den User weiter
             // TODO: Ergänze weitere Exceptions (IOException,...) für besseres Fehlermanagement
         }
+    }
+
+    private fun parseDescription(description: String) : Map<String, String> {
+        val descriptionDict = mutableMapOf<String, String>()
+        description.split("\n").forEach { line ->
+            val entries = line.split(":")
+            if (entries.size == 2) {
+                descriptionDict[entries[0].trim()] = entries[1].trim()
+            }
+        }
+        return descriptionDict
     }
 
     private fun copyFileToAppInternalStorage(context: Context, uri: Uri) : String? {

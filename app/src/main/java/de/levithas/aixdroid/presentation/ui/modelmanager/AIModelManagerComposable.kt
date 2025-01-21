@@ -6,8 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +13,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,8 +21,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -36,7 +31,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -178,12 +172,7 @@ fun AIModelOverview(
                     .align(Alignment.End)
                     .padding(8.dp)
                     .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
-                colors = IconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    disabledContentColor = MaterialTheme.colorScheme.tertiary
-                ),
+                colors = MaterialTheme.customColors.addIconButtonColors,
                 onClick = onAddNewDataModelRequested
             ) {
                 Icon(Icons.Filled.Add , "Add" , modifier = Modifier)
@@ -226,7 +215,8 @@ fun AIModelItem(
             .height(128.dp)
             .clickable {
                 onOpenDetails(model)
-            }
+            },
+            colors = MaterialTheme.customColors.itemCard
     ) {
         Column(
             modifier = Modifier
@@ -334,6 +324,20 @@ fun AIModelDetailScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(text = modelData.version)
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Text(style = MaterialTheme.typography.titleMedium, text = "Time Period:")
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = modelData.timePeriod.toString())
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Text(style = MaterialTheme.typography.titleMedium, text = "N-Steps:")
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = modelData.n_steps.toString())
+                    }
                 }
 
             }
@@ -343,8 +347,8 @@ fun AIModelDetailScreen(
                 Text("Input Tensors", style = MaterialTheme.typography.titleMedium)
                 TensorTable(Modifier, modelData.inputs)
                 Spacer(Modifier.height(16.dp))
-                Text("Outputput Tensors", style = MaterialTheme.typography.titleMedium)
-                TensorTable(Modifier, modelData.outputs, column1Weight = .7f, column2Weight = .3f)
+                Text("Output Tensors", style = MaterialTheme.typography.titleMedium)
+                modelData.output?.let { TensorTable(Modifier, listOf(it), column1Weight = .7f, column2Weight = .3f) }
             }
 
             Button(
@@ -473,8 +477,7 @@ val modelConfigurationPreview = ModelData(
             max = 200.0f,
         )
     ).toList(),
-    outputs = arrayOf(
-        TensorData(
+    output = TensorData(
             id = 2,
             name = "Antwort",
             description = "Enthält die Nachricht des Modells an dich",
@@ -482,17 +485,7 @@ val modelConfigurationPreview = ModelData(
             shape = arrayOf(10,2,300).toList(),
             min = 0.0f,
             max = 1.0f,
-        ),
-        TensorData(
-            id = 32,
-            name = "Zerstörungsthreshold",
-            description = "Der Wert gibt an, wie sehr das Modell die Welt vernichten möchte (0 = garnicht, 1 = sofort)",
-            type = TensorType.FLOAT32,
-            shape = arrayOf(1,2,300).toList(),
-            min = 0.0f,
-            max = 1.0f,
         )
-    ).toList()
 )
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)

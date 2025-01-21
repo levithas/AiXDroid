@@ -21,7 +21,7 @@ interface DataSetDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDataSet(dataSet: DBDataSet) : Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertDataSeries(dataSeries: DBDataSeries) : Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -40,8 +40,16 @@ interface DataSetDao {
     suspend fun updateDataSet(dataSet: DBDataSet) : Int
 
     @Transaction
+    @Query("SELECT * FROM DBDataSetToDataSeries WHERE dataSeriesId == :dataSeriesId AND dataSetId == :dataSetId")
+    fun getDataSetToDataSeries(dataSetId: Long, dataSeriesId: Long) : Flow<DBDataSetToDataSeries>
+
+    @Transaction
     @Query("SELECT * FROM dbdataset")
     fun getAllDataSets(): Flow<List<DBDataSetWithDataSeries>>
+
+    @Transaction
+    @Query("SELECT * FROM dbdataset WHERE autoPredict == 1 AND predictionModelFileName != null")
+    fun getAllDataSetsWithAutoInference(): Flow<List<DBDataSetWithDataSeries>>
 
     @Transaction
     @Query("SELECT * FROM DBDataSeries")
@@ -49,34 +57,37 @@ interface DataSetDao {
 
     @Transaction
     @Query("SELECT * FROM DBDataSeries WHERE id == :id")
-    fun getDataSeriesById(id: Long) : DBDataSeries?
-
-    @Transaction
-    @Query("SELECT * FROM DBDataSeries")
-    fun getAllDataSeriesNoFlow(): List<DBDataSeries>
+    fun getDataSeriesById(id: Long) : Flow<DBDataSeries>
 
     @Transaction
     @Query("SELECT * FROM DBDATASERIES WHERE name == :name")
-    fun getAllDataSeriesWithName(name: String): List<DBDataSeries>
+    fun getDataSeriesByName(name: String) : Flow<DBDataSeries>
+
+    @Transaction
+    @Query("SELECT * FROM DBDATASERIES WHERE name == :name")
+    fun getAllDataSeriesWithName(name: String): Flow<List<DBDataSeries>>
 
     @Transaction
     @Query("SELECT * FROM dbdataset WHERE id == :id")
-    fun getDataSetById(id: Long) : DBDataSetWithDataSeries?
+    fun getDataSetById(id: Long) : Flow<DBDataSetWithDataSeries>
 
-    @Query("SELECT * FROM dbDataPoint WHERE dataSeriesId == :dataSeriesId AND time >= :minTime ORDER BY time ASC LIMIT :count")
-    suspend fun getDataPointsInRange(dataSeriesId: Long, minTime: Long, count: Int): List<DBDataPoint>
+    @Query("SELECT * FROM dbDataPoint WHERE dataSeriesId == :dataSeriesId AND time <= :lastTime ORDER BY time DESC LIMIT :count")
+    suspend fun getDataPointsInRange(dataSeriesId: Long, lastTime: Long, count: Int): List<DBDataPoint>
+
+    @Query("SELECT * FROM DBDataPoint WHERE dataSeriesId == :dataSeriesId AND time >= :startTime AND time <= :endTime")
+    suspend fun getDataPointsInDateRange(dataSeriesId: Long, startTime: Long, endTime: Long) : List<DBDataPoint>
 
     @Transaction
     @Query("SELECT MIN(time) FROM DBDataPoint WHERE dataSeriesId == :dataSeriesId")
-    fun getDataPointMinTimeByDataSeriesId(dataSeriesId: Long) : Long
+    suspend fun getDataPointMinTimeByDataSeriesId(dataSeriesId: Long) : Long?
 
     @Transaction
     @Query("SELECT MAX(time) FROM DBDataPoint WHERE dataSeriesId == :dataSeriesId")
-    fun getDataPointMaxTimeByDataSeriesId(dataSeriesId: Long) : Long
+    suspend fun getDataPointMaxTimeByDataSeriesId(dataSeriesId: Long) : Long?
 
     @Transaction
     @Query("SELECT COUNT(*) FROM DBDataPoint WHERE dataSeriesId == :dataSeriesId")
-    fun getDataPointCountByDataSeriesId(dataSeriesId: Long) : Long
+    suspend fun getDataPointCountByDataSeriesId(dataSeriesId: Long) : Long
 
     @Transaction
     @Query("SELECT * FROM dbdataset WHERE name == :name")
@@ -84,9 +95,9 @@ interface DataSetDao {
 
     @Transaction
     @Query("DELETE FROM DBDataSeries WHERE id == :id")
-    fun deleteDataSeries(id: Long)
+    suspend fun deleteDataSeries(id: Long)
 
     @Transaction
     @Query("DELETE FROM dbdataset WHERE id == :id")
-    fun deleteDataSet(id: Long)
+    suspend fun deleteDataSet(id: Long)
 }

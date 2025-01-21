@@ -13,6 +13,8 @@ import de.levithas.aixdroid.data.repository.DataRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
@@ -24,10 +26,12 @@ import javax.inject.Inject
 
 interface DataSeriesUseCase {
     suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit)
-    suspend fun checkExistingDataSeriesNames(uri: Uri) : Boolean
+    suspend fun checkExistingDataSeriesNames(name: String) : Boolean
     suspend fun addDataSeries(dataSeries: DataSeries) : Long
+    suspend fun getDataSeriesByName(name: String) : Flow<DataSeries>
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
-    suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, minTime: Date, count: Int) : List<DataPoint>?
+    suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, lastTime: Date, count: Int) : List<DataPoint>?
+    suspend fun getDataPointsFromDataSeriesInDateRange(dataSeries: DataSeries, startTime: Date, endTime: Date) : List<DataPoint>?
     suspend fun addDataPoints(dataSeriesId: Long, dataPointList: List<DataPoint>) : List<Long>
     suspend fun deleteDataSeries(dataSeriesId: Long)
 }
@@ -51,12 +55,20 @@ class DataSeriesUseCaseImpl @Inject constructor(
         return dataRepository.addDataSeries(listOf(dataSeries)).first()
     }
 
+    override suspend fun getDataSeriesByName(name: String) : Flow<DataSeries> {
+        return dataRepository.getDataSeriesByName(name)
+    }
+
     override suspend fun updateDataSeries(dataSeries: DataSeries) : Int {
         return dataRepository.updateDataSeries(dataSeries)
     }
 
-    override suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, minTime: Date, count: Int) : List<DataPoint>? {
-        return dataSeries.id?.let { dataRepository.getDataPointsByDataSeriesId(it, minTime.time, count) }
+    override suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, lastTime: Date, count: Int) : List<DataPoint>? {
+        return dataSeries.id?.let { dataRepository.getDataPointsByDataSeriesId(it, lastTime.time, count) }
+    }
+
+    override suspend fun getDataPointsFromDataSeriesInDateRange(dataSeries: DataSeries, startTime: Date, endTime: Date): List<DataPoint>? {
+        return dataSeries.id?.let { dataRepository.getDataPointsByDataSeriesIdInDateRange(it, startTime.time, endTime.time) }
     }
 
     override suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit) {
@@ -79,7 +91,7 @@ class DataSeriesUseCaseImpl @Inject constructor(
 
                     if (lineCount == 0L) {
                         if (existingDataSeriesNameMap.isEmpty()) {
-                            existingDataSeriesNameMap = dataRepository.getAllDataSeriesNoFlow().associateBy { it.name }
+                            existingDataSeriesNameMap = dataRepository.getAllDataSeries().firstOrNull()?.associateBy { it.name }?: emptyMap()
                         }
 
                         dataSeriesList = parseCSVHeaderToDataSeries(line, separatorSign)
@@ -117,8 +129,8 @@ class DataSeriesUseCaseImpl @Inject constructor(
                             // Update Metadata for DataSeries
                             dataSeriesList.forEach { dataSeries ->
                                 dataSeries.count = dataSeries.id?.let { dataRepository.getDataPointCountByDataSeriesId(it) }
-                                dataSeries.startTime = dataSeries.id?.let { Date(dataRepository.getDataPointMinTimeByDataSeriesId(it)) }
-                                dataSeries.endTime = dataSeries.id?.let { Date(dataRepository.getDataPointMaxTimeByDataSeriesId(it)) }
+                                dataSeries.startTime = dataSeries.id?.let { dataRepository.getDataPointMinTimeByDataSeriesId(it)?.let { Date(it)} }
+                                dataSeries.endTime = dataSeries.id?.let { dataRepository.getDataPointMaxTimeByDataSeriesId(it)?.let { Date(it)} }
                                 // Replace the old dataSeries with new dataSeries
                                 dataRepository.updateDataSeries(dataSeries)
                             }
@@ -139,17 +151,12 @@ class DataSeriesUseCaseImpl @Inject constructor(
         }
     }
 
-    override suspend fun checkExistingDataSeriesNames(uri: Uri): Boolean {
-        val inputStream = context.contentResolver.openInputStream(uri)
-        val inputStreamReader = InputStreamReader(inputStream)
-        val bufferedReader = BufferedReader(inputStreamReader)
+    override suspend fun checkExistingDataSeriesNames(name: String): Boolean {
         val result: Boolean
 
         withContext(Dispatchers.IO) {
-            val line = bufferedReader.readLine()
-            val dataSeriesList = parseCSVHeaderToDataSeries(line, separatorSign)
-            existingDataSeriesNameMap = dataRepository.getAllDataSeriesNoFlow().associateBy { it.name }
-            result = dataSeriesList.any { existingDataSeriesNameMap[it.name] != null }
+            existingDataSeriesNameMap = dataRepository.getAllDataSeries().firstOrNull()?.associateBy { it.name }?: emptyMap()
+            result = existingDataSeriesNameMap[name] != null
         }
 
         return result

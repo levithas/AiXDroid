@@ -2,6 +2,7 @@ package de.levithas.aixdroid.data.model.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import de.levithas.aixdroid.data.model.ai.DBTensorData
 
 @Entity(
     primaryKeys = ["dataSetId", "dataSeriesId"],
@@ -17,6 +18,12 @@ import androidx.room.ForeignKey
             parentColumns = ["id"],
             childColumns = ["dataSeriesId"],
             onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = DBTensorData::class,
+            parentColumns = ["id"],
+            childColumns = ["tensorDataId"],
+            onDelete = ForeignKey.SET_NULL
         ),
     ]
 )

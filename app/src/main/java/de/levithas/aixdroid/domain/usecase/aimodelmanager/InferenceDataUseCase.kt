@@ -1,6 +1,7 @@
 package de.levithas.aixdroid.domain.usecase.aimodelmanager
 
 import android.content.Context
+import android.util.Log
 import com.google.flatbuffers.FlatBufferBuilder.ByteBufferFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.levithas.aixdroid.domain.model.DataPoint
@@ -38,55 +39,63 @@ class InferenceDataUseCaseImpl @Inject constructor(
                     val dataSeriesWithTensor = dataSet.columns.filter { (_, tensor) -> tensor != null }
                     val startTime = dataSet.columns.minOf { it.key.startTime?.time ?:Long.MIN_VALUE }
                     val endTime = dataSet.columns.maxOf { it.key.endTime?.time ?:Long.MAX_VALUE }
-                    var currentStartTime = startTime
+                    var currentEndTime = endTime
                     var continueLoop = true
 
+                    if (dataSeriesWithTensor.isNotEmpty()) {
+                        while (continueLoop) {
+                            val featureList = mutableListOf<List<DataPoint>>()
+                            val predictionList = mutableListOf<DataPoint>()
 
-                    while (continueLoop) {
-                        val featureList = mutableListOf<List<DataPoint>>()
-                        val predictionList = mutableListOf<DataPoint>()
-
-                        for (series in dataSeriesWithTensor) {
-                            // TODO: inferenceBufferSize has to be controlled by the model batch size
-                            dataSeriesUseCase.getDataPointsFromDataSeries(series.key, Date(currentStartTime), inferenceBufferSize)?.let {
-                                dataPointList ->
-                                if (dataPointList.isNotEmpty()) {
-                                    featureList.add(dataPointList)
+                            for (series in dataSeriesWithTensor) {
+                                // TODO: inferenceBufferSize has to be controlled by the model batch size
+                                dataSeriesUseCase.getDataPointsFromDataSeries(series.key, Date(currentEndTime), inferenceBufferSize)?.let {
+                                        dataPointList ->
+                                    if (dataPointList.isNotEmpty()) {
+                                        featureList.add(dataPointList.filter { dataPoint -> dataPoint.time.time >= startTime })
+                                    }
                                 }
                             }
-                        }
 
-                        if (featureList.isNotEmpty()) {
-                            val featureMap = transformToMap(featureList)
-                            if (featureMap.isNotEmpty()) {
-                                val timestamp = featureMap.maxOf { it.key }
-                                val featureVector = transformFeatureListToByteBufferArray(featureList)
+                            if (featureList.isNotEmpty()) {
+                                val featureMap = transformToMap(featureList)
+                                if (featureMap.isNotEmpty()) {
+                                    val timestamp = featureMap.maxOf { it.key }
+                                    val featureVector = transformFeatureListToByteBufferArray(featureList)
 
-                                if (featureList[0].size == 75) {
-                                    inferenceOnDataPointMap(interpreter, timestamp, featureVector)
-                                        .let {
-                                                predictedData ->
-                                            predictionList.add(
-                                                DataPoint(
-                                                    time = Date(predictedData.first),
-                                                    value = predictedData.second
+                                    if (featureList[0].size == 75) {
+                                        inferenceOnDataPointMap(interpreter, timestamp, featureVector)
+                                            .let {
+                                                    predictedData ->
+                                                predictionList.add(
+                                                    DataPoint(
+                                                        time = Date(predictedData.first),
+                                                        value = predictedData.second
+                                                    )
                                                 )
-                                            )
-                                        }
-                                    savePredictionDataSeries(predictionSeries, predictionList)
+                                            }
+                                        savePredictionDataSeries(predictionSeries, predictionList)
+                                    }
+                                    else {
+                                        continueLoop = false
+                                    }
                                 }
-                                else {
-                                    continueLoop = false
+
+                                onProgressUpdate((endTime - currentEndTime) / (endTime - startTime).toFloat())
+
+                                // Find next larger Timepoint
+                                currentEndTime = featureList.maxOf { dataSeries ->
+                                    dataSeries.filter { dataPoint ->
+                                        dataPoint.time.time < currentEndTime
+                                    }.maxOfOrNull { it3 ->
+                                        it3.time.time } ?: Long.MIN_VALUE
                                 }
+                            } else {
+                                continueLoop = false
                             }
-
-                            onProgressUpdate((currentStartTime - startTime) / (endTime - startTime).toFloat())
-
-                            // Find next larger Timepoint
-                            currentStartTime = featureList.minOf { it.filter { it2 -> it2.time.time > currentStartTime }.minOf { it.time.time } }
-                        } else {
-                            continueLoop = false
                         }
+                    } else {
+                        Log.e("InferenceDataUseCase", "No Tensors for dataSeries found!")
                     }
                 }
                 interpreter.close()
@@ -130,7 +139,7 @@ class InferenceDataUseCaseImpl @Inject constructor(
         val inputVector = arrayOf(transformTimePeriodicity(timeStamp, 24*3600000.0f)) + inputFeatures
         val outputVector = ByteBuffer.allocateDirect(4) // 4 Byte for 1 Output
 
-        interpreter.run(inputVector[1], outputVector)
+        interpreter.run(inputVector, outputVector)
 
         return Pair(timeStamp, outputVector.getFloat(0))
     }

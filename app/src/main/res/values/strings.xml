@@ -15,4 +15,7 @@
     <string name="model_manager_edit_path">Path to tflite-File</string>
     <string name="data_manager_series_detail">Data Series Details</string>
     <string name="data_manager_not_designated_data_series">Not assigned data</string>
+    <string name="external_intent_manager_details">External Intent Details</string>
+    <string name="aixdroid_response_action">de.levithas.aixdroid.RESPONSE</string>
+    <string name="notification_channelId">service_channel</string>
 </resources>

@@ -2,10 +2,13 @@ package de.levithas.aixdroid.data.model.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.Date
 
-@Entity
+@Entity(
+    indices = [Index(value = ["name"], unique = true)]
+)
 data class DBDataSeries(
     val name: String,
     val origin: String,

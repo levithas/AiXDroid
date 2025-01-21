@@ -20,8 +20,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -68,16 +70,21 @@ class DataViewModel @Inject constructor(
         }
     }
 
+    private var _currentDataSetId = 0L
     private val _currentDataSet = MutableStateFlow<DataSet?>(null)
-    val currentDataSet get() = _currentDataSet
+    val currentDataSet: StateFlow<DataSet?> get() = _currentDataSet
 
     fun resetCurrentDataSet() {
         _currentDataSet.value = null
     }
 
     fun setCurrentDataSet(dataSetId: Long) {
+        _currentDataSetId = dataSetId
         viewModelScope.launch(Dispatchers.IO) {
-            _currentDataSet.value = dataSetUseCase.getDataSetById(dataSetId)
+            _currentDataSet.value = dataSetUseCase.getDataSetById(dataSetId)?.firstOrNull()
+//            dataSetUseCase.getDataSetById(_currentDataSetId)?.collect {
+//                _currentDataSet.value = it
+//            }
         }
     }
 
@@ -92,6 +99,7 @@ class DataViewModel @Inject constructor(
 
     private var importJob: Job? = null
     private var inferenceJob: Job? = null
+    private var assignJob: Job? = null
 
     init {
         fetchDataSeriesList()
@@ -124,22 +132,23 @@ class DataViewModel @Inject constructor(
             _importProgress.value = 0.0f
 
             try {
-                if (dataSeriesUseCase.checkExistingDataSeriesNames(uri)) {
-                    _importDataMergeDecision.value = ImportDataMergeDecision.ON_REQUEST
-
-                    // Wait for UI to make a decision
-                    val decision = _importDataMergeDecision.filter { it != ImportDataMergeDecision.ON_REQUEST }.first()
-
-                    when (decision) {
-                        ImportDataMergeDecision.NONE -> return@launch
-                        ImportDataMergeDecision.ON_REQUEST -> {
-                            error("UI decision did not block!!!")
-                        }
-
-                        ImportDataMergeDecision.MERGE -> {}
-                        ImportDataMergeDecision.NO_MERGE -> return@launch
-                    }
-                }
+                // TODO: For the moment, just merge...
+//                if (dataSeriesUseCase.checkExistingDataSeriesNames(uri)) {
+//                    _importDataMergeDecision.value = ImportDataMergeDecision.ON_REQUEST
+//
+//                    // Wait for UI to make a decision
+//                    val decision = _importDataMergeDecision.filter { it != ImportDataMergeDecision.ON_REQUEST }.first()
+//
+//                    when (decision) {
+//                        ImportDataMergeDecision.NONE -> return@launch
+//                        ImportDataMergeDecision.ON_REQUEST -> {
+//                            error("UI decision did not block!!!")
+//                        }
+//
+//                        ImportDataMergeDecision.MERGE -> {}
+//                        ImportDataMergeDecision.NO_MERGE -> return@launch
+//                    }
+//                }
 
                 dataSeriesUseCase.importFromCSV(uri) { progress ->
                     _importProgress.value = progress
@@ -160,8 +169,9 @@ class DataViewModel @Inject constructor(
     fun addPredictionDataSeriesToDataSet(dataSet: DataSet, dataSeries: DataSeries) {
         viewModelScope.launch(Dispatchers.IO) {
             dataSeries.id = dataSeriesUseCase.addDataSeries(dataSeries)
-            dataSet.predictionSeries = dataSeries
-            dataSetUseCase.updateDataSet(dataSet)
+            val dataSetCopy = dataSet.copy()
+            dataSetCopy.predictionSeries = dataSeries
+            dataSetUseCase.updateDataSet(dataSetCopy)
         }
     }
 
@@ -186,9 +196,9 @@ class DataViewModel @Inject constructor(
     }
 
     fun assignTensorDataToDataSet(dataSet: DataSet, tensorDataMap: Map<Long, Long>) {
-        viewModelScope.launch(Dispatchers.IO) {
+        assignJob = viewModelScope.launch(Dispatchers.IO) {
             dataSet.id?.let {
-                dataSetUseCase.assignTensorDataList(dataSet, tensorDataMap)
+                dataSetUseCase.assignTensorDataList(it, tensorDataMap)
             }
         }
     }
@@ -217,14 +227,20 @@ class DataViewModel @Inject constructor(
         }
     }
 
-    fun startInference(dataSet: DataSet) {
+    fun startInference() {
         inferenceJob = viewModelScope.launch(Dispatchers.IO) {
             try {
+                assignJob?.join()
+
+                currentDataSet.value?.id?.let { setCurrentDataSet(it) }
+
                 _isInfering.value = true
                 _inferenceProgress.value = 0.0f
 
-                inferenceDataUseCase.startInference(dataSet) { progress ->
-                    _inferenceProgress.value = progress
+                currentDataSet.value?.let { dataSet ->
+                    inferenceDataUseCase.startInference(dataSet) { progress ->
+                        _inferenceProgress.value = progress
+                    }
                 }
             } catch (e: CancellationException) {
                 Log.w("Data Inference", "Data inference was canceled: " + e.message)
