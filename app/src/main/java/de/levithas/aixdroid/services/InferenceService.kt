@@ -7,6 +7,7 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.levithas.aixdroid.data.repository.DataRepository
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,11 +25,11 @@ class InferenceService : AbstractService() {
     override fun onCreate() {
         super.onCreate()
         val notification = createNotification()
-        startForeground(2, notification)
+        startForeground(1, notification)
 
         Log.i("InferenceService", "Starting...")
 
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             while (true) {
                 Log.i("InferenceService", "Inference Cycle Start")
                 val startTime = System.currentTimeMillis()

@@ -1,8 +1,7 @@
-package de.levithas.aixdroid.services.intentactions
+package de.levithas.aixdroid.domain.usecase.intentmanager.intentactions
 
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 
 interface ExternalIntentAction {
     fun getActionString() : String

@@ -1,4 +1,4 @@
-package de.levithas.aixdroid.services.intentactions
+package de.levithas.aixdroid.domain.usecase.intentmanager.intentactions
 
 import android.content.Context
 import android.content.Intent
@@ -9,6 +9,7 @@ import de.levithas.aixdroid.R
 import de.levithas.aixdroid.data.repository.DataRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,7 +33,7 @@ class ReadDataExternalIntentAction @Inject constructor(
                 CoroutineScope(Dispatchers.IO).launch {
                     val responseIntent = Intent()
                     responseIntent.setAction(localContext.getString(R.string.aixdroid_response_action))
-                    val dataSeries = dataRepository.getDataSeriesByName(dataSeriesName).firstOrNull()
+                    val dataSeries = dataRepository.getDataSeriesByName(dataSeriesName).first()
                     val responseExtras = Bundle()
 
                     if (dataSeries != null) {
@@ -48,19 +49,21 @@ class ReadDataExternalIntentAction @Inject constructor(
                             responseExtras.putLongArray("timeValues", timeValuesArray.toLongArray())
                             responseExtras.putFloatArray("dataValues", dataValuesArray.toFloatArray())
 
-                            Log.w("WriteDataExternalIntentAction", "Sending ${timeValuesArray.size} Datapoints...")
+                            Log.w("ReadDataExternalIntentAction", "Sending ${timeValuesArray.size} Datapoints...")
                         }
                     } else {
                         responseExtras.putString("error", "DataSeries does not exist")
-                        Log.w("WriteDataExternalIntentAction", "DataSeries does not exist! (${dataSeriesName})")
+                        Log.w("ReadDataExternalIntentAction", "DataSeries does not exist! (${dataSeriesName})")
                     }
                     responseIntent.putExtras(responseExtras)
                     localContext.sendBroadcast(responseIntent)
-                    Log.w("WriteDataExternalIntentAction", "Done!")
+                    Log.w("ReadDataExternalIntentAction", "Done!")
                 }
             } else {
-                Log.w("WriteDataExternalIntentAction", "Missing required extras!")
+                Log.w("ReadDataExternalIntentAction", "Missing required extras!")
             }
+        }?:run {
+            Log.w("ReadDataExternalIntentAction","Intent empty!");
         }
     }
 }

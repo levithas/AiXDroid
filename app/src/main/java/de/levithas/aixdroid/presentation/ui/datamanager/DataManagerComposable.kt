@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
@@ -683,9 +685,12 @@ fun DataSetDetails(
     onExportDataSeries: (Long) -> Unit
 ) {
     dataSet?.let {
+        val scrollState = rememberScrollState()
+
         Column(
             modifier = Modifier
-                .fillMaxHeight(),
+                .fillMaxSize()
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -767,24 +772,40 @@ fun DataSetDetails(
                             Text(text = it.name)
                         }
 
-                        // List of connected features
-                        LazyColumn {
-                            item {
-                                Row(Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
-                                    TableCell(text = "InputTensor", weight = .5f)
-                                    TableCell(text = "DataSeries", weight = .5f)
-                                }
-                            }
+                        // Der erste Eintrag
+                        Row(Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+                            TableCell(text = "InputTensor", weight = .5f)
+                            TableCell(text = "DataSeries", weight = .5f)
+                        }
 
-                            items(dataSet.columns.keys.toList()) { dataSeries ->
-                                dataSet.columns[dataSeries]?.let {
-                                    Row(Modifier.fillMaxWidth()) {
-                                        TableCell(text = it.name, weight = .5f)
-                                        TableCell(text = dataSeries.name, weight = .5f)
-                                    }
+                        // Manuelle Iteration durch die columns
+                        dataSet.columns.keys.forEach { dataSeries ->
+                            dataSet.columns[dataSeries]?.let {
+                                Row(Modifier.fillMaxWidth()) {
+                                    TableCell(text = it.name, weight = .5f)
+                                    TableCell(text = dataSeries.name, weight = .5f)
                                 }
                             }
                         }
+
+                        // List of connected features
+//                        LazyColumn {
+//                            item {
+//                                Row(Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
+//                                    TableCell(text = "InputTensor", weight = .5f)
+//                                    TableCell(text = "DataSeries", weight = .5f)
+//                                }
+//                            }
+//
+//                            items(dataSet.columns.keys.toList()) { dataSeries ->
+//                                dataSet.columns[dataSeries]?.let {
+//                                    Row(Modifier.fillMaxWidth()) {
+//                                        TableCell(text = it.name, weight = .5f)
+//                                        TableCell(text = dataSeries.name, weight = .5f)
+//                                    }
+//                                }
+//                            }
+//                        }
                         dataSet.predictionSeries?.let {
                             Row(
                                 modifier = Modifier

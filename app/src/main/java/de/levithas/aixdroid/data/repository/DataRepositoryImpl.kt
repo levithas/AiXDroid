@@ -11,6 +11,7 @@ import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.model.DataSet
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.util.Date
@@ -41,8 +42,8 @@ class DataRepositoryImpl @Inject constructor(
         return dao.getDataSeriesById(id).map{ flow -> flow.toDomainModel() }
     }
 
-    override suspend fun getDataSeriesByName(name: String): Flow<DataSeries> {
-        return dao.getDataSeriesByName(name).map {flow -> flow.toDomainModel() }
+    override suspend fun getDataSeriesByName(name: String): Flow<DataSeries?> {
+        return dao.getDataSeriesByName(name).map { flow -> flow?.toDomainModel() }
     }
 
     override suspend fun getDataSetsByName(name: String): Flow<List<DataSet>> {
@@ -163,7 +164,7 @@ class DataRepositoryImpl @Inject constructor(
             name = this.name,
             description = this.description,
             predictionModelFileName = this.aiModel?.fileName,
-            autoPredict = this.autoPredict,
+            autoPredict = if (this.autoPredict) 1 else 0,
             predictionDataSeriesId = this.predictionSeries?.id
         )
         this.id?.let { dbObject.id = it }
@@ -235,7 +236,7 @@ class DataRepositoryImpl @Inject constructor(
             },
             predictionSeries = predictionSeries,
             aiModel = this.dataSet.predictionModelFileName?.let { modelRepository.getModel(it) },
-            autoPredict = this.dataSet.autoPredict
+            autoPredict = this.dataSet.autoPredict == 1
         )
     }
 }

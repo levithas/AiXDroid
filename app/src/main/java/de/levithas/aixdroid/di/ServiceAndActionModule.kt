@@ -6,12 +6,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.levithas.aixdroid.data.repository.DataRepository
-import de.levithas.aixdroid.data.repository.ExternalIntentRepository
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
-import de.levithas.aixdroid.services.ExternalIntentService
-import de.levithas.aixdroid.services.intentactions.InferenceExternalIntentAction
-import de.levithas.aixdroid.services.intentactions.ReadDataExternalIntentAction
-import de.levithas.aixdroid.services.intentactions.WriteDataExternalIntentAction
+import de.levithas.aixdroid.domain.usecase.intentmanager.intentactions.InferenceExternalIntentAction
+import de.levithas.aixdroid.domain.usecase.intentmanager.intentactions.ReadDataExternalIntentAction
+import de.levithas.aixdroid.domain.usecase.intentmanager.intentactions.WriteDataExternalIntentAction
 
 @Module
 @InstallIn(SingletonComponent::class)

@@ -28,7 +28,7 @@ interface DataSeriesUseCase {
     suspend fun importFromCSV(uri: Uri, onProgressUpdate: (Float) -> Unit)
     suspend fun checkExistingDataSeriesNames(name: String) : Boolean
     suspend fun addDataSeries(dataSeries: DataSeries) : Long
-    suspend fun getDataSeriesByName(name: String) : Flow<DataSeries>
+    suspend fun getDataSeriesByName(name: String) : Flow<DataSeries?>
     suspend fun updateDataSeries(dataSeries: DataSeries) : Int
     suspend fun getDataPointsFromDataSeries(dataSeries: DataSeries, lastTime: Date, count: Int) : List<DataPoint>?
     suspend fun getDataPointsFromDataSeriesInDateRange(dataSeries: DataSeries, startTime: Date, endTime: Date) : List<DataPoint>?
@@ -55,7 +55,7 @@ class DataSeriesUseCaseImpl @Inject constructor(
         return dataRepository.addDataSeries(listOf(dataSeries)).first()
     }
 
-    override suspend fun getDataSeriesByName(name: String) : Flow<DataSeries> {
+    override suspend fun getDataSeriesByName(name: String) : Flow<DataSeries?> {
         return dataRepository.getDataSeriesByName(name)
     }
 

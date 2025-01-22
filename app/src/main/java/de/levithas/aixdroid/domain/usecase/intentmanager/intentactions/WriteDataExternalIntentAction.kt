@@ -1,18 +1,15 @@
-package de.levithas.aixdroid.services.intentactions
+package de.levithas.aixdroid.domain.usecase.intentmanager.intentactions
 
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
-import de.levithas.aixdroid.data.repository.DataRepository
 import de.levithas.aixdroid.domain.model.DataPoint
 import de.levithas.aixdroid.domain.model.DataSeries
 import de.levithas.aixdroid.domain.usecase.datamanager.DataSeriesUseCase
-import de.levithas.aixdroid.domain.usecase.datamanager.DataSetUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -41,7 +38,7 @@ class WriteDataExternalIntentAction @Inject constructor(
                         DataPoint(value = dataValueArray[index], time = Date(time))
                     }
 
-                    val dataSeries = dataSeriesUseCase.getDataSeriesByName(dataSeriesName).firstOrNull()
+                    val dataSeries = dataSeriesUseCase.getDataSeriesByName(dataSeriesName).first();
                     var dataSeriesId = dataSeries?.id
                     if (dataSeriesId == null) {
                         Log.i("WriteDataExternalIntentAction", "No dataSeries found with name ${dataSeriesName}! Creating one...")

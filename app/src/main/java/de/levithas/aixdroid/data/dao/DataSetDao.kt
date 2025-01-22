@@ -48,7 +48,7 @@ interface DataSetDao {
     fun getAllDataSets(): Flow<List<DBDataSetWithDataSeries>>
 
     @Transaction
-    @Query("SELECT * FROM dbdataset WHERE autoPredict == 1 AND predictionModelFileName != null")
+    @Query("SELECT * FROM dbdataset WHERE autoPredict == 1 AND predictionModelFileName IS NOT NULL")
     fun getAllDataSetsWithAutoInference(): Flow<List<DBDataSetWithDataSeries>>
 
     @Transaction
@@ -61,7 +61,7 @@ interface DataSetDao {
 
     @Transaction
     @Query("SELECT * FROM DBDATASERIES WHERE name == :name")
-    fun getDataSeriesByName(name: String) : Flow<DBDataSeries>
+    fun getDataSeriesByName(name: String) : Flow<DBDataSeries?>
 
     @Transaction
     @Query("SELECT * FROM DBDATASERIES WHERE name == :name")

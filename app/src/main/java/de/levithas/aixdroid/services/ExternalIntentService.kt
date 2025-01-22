@@ -1,8 +1,6 @@
 package de.levithas.aixdroid.services
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.IntentFilter
 import android.os.Build
@@ -14,9 +12,9 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.levithas.aixdroid.data.repository.ExternalIntentRepository
 import de.levithas.aixdroid.domain.model.ExternalIntentConfiguration
-import de.levithas.aixdroid.services.intentactions.InferenceExternalIntentAction
-import de.levithas.aixdroid.services.intentactions.ReadDataExternalIntentAction
-import de.levithas.aixdroid.services.intentactions.WriteDataExternalIntentAction
+import de.levithas.aixdroid.domain.usecase.intentmanager.intentactions.InferenceExternalIntentAction
+import de.levithas.aixdroid.domain.usecase.intentmanager.intentactions.ReadDataExternalIntentAction
+import de.levithas.aixdroid.domain.usecase.intentmanager.intentactions.WriteDataExternalIntentAction
 import de.levithas.aixdroid.services.receivers.ExternalIntentReceiver
 import kotlinx.coroutines.launch
 import javax.inject.Inject

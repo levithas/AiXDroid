@@ -3,9 +3,8 @@ package de.levithas.aixdroid.services.receivers
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.util.Log
-import de.levithas.aixdroid.services.intentactions.ExternalIntentAction
+import de.levithas.aixdroid.domain.usecase.intentmanager.intentactions.ExternalIntentAction
 
 class ExternalIntentReceiver(
     private val actionString: String,

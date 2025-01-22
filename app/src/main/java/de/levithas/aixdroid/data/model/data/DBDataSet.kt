@@ -11,7 +11,7 @@ data class DBDataSet(
     val description: String,
 
     val predictionModelFileName: String?,
-    val autoPredict: Boolean,
+    val autoPredict: Int,
 
     val predictionDataSeriesId: Long?
 ) {
