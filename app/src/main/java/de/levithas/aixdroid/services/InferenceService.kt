@@ -7,6 +7,7 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.levithas.aixdroid.data.repository.DataRepository
 import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCase
+import de.levithas.aixdroid.domain.usecase.aimodelmanager.InferenceDataUseCaseImplV2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

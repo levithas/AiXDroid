@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -52,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
@@ -118,6 +120,7 @@ fun DataManagerComposable(
                     viewModel.resetCurrentDataSet()
                     currentTab = DATA_SET_LIST
                 }
+
                 DATA_SET_CREATION -> {
                     currentTab = if (currentDataSet == null) {
                         DATA_SET_LIST
@@ -125,6 +128,7 @@ fun DataManagerComposable(
                         DATA_SET_DETAILS
                     }
                 }
+
                 DATA_SERIES_LIST -> {
                     currentTab = if (currentDataSet == null) {
                         DATA_SET_LIST
@@ -132,6 +136,7 @@ fun DataManagerComposable(
                         DATA_SET_DETAILS
                     }
                 }
+
                 DATA_SET_INFERENCE -> {
                     currentTab = DATA_SET_DETAILS
                 }
@@ -175,11 +180,13 @@ fun DataManagerComposable(
             currentTab = DATA_SET_LIST
         },
 
-        onDissolveDataSet = { currentDataSet?.id?.let {
-            viewModel.dissolveDataSet(it)
-            viewModel.resetCurrentDataSet()
-            currentTab = DATA_SET_LIST
-        } },
+        onDissolveDataSet = {
+            currentDataSet?.id?.let {
+                viewModel.dissolveDataSet(it)
+                viewModel.resetCurrentDataSet()
+                currentTab = DATA_SET_LIST
+            }
+        },
         onEditDataSet = {
             currentDataSeriesList = emptyList()
             currentTab = DATA_SET_CREATION
@@ -297,7 +304,7 @@ fun DataManagerWindow(
                 )
             }
 
-            if(isInfering) {
+            if (isInfering) {
                 ProgressBarWithCancel(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -388,23 +395,40 @@ fun DataListWindow(
     onRemoveDataSeriesFromDataSet: () -> Unit,
     dataListComposable: @Composable() () -> Unit
 ) {
-    dataListComposable()
+    Scaffold { paddingValues ->
+        dataListComposable()
 
-    if (showJoinButton) {
-        if(currentDataSet != null) {
-            IconButton(
-                modifier = modifier
-                    .padding(8.dp)
-                    .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
-                colors = IconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.secondary,
-                    disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    disabledContentColor = MaterialTheme.colorScheme.tertiary
-                ),
-                onClick = onRemoveDataSeriesFromDataSet
-            ) {
-                Icon(Icons.Filled.Remove, "Remove", modifier = Modifier)
+        if (showJoinButton) {
+            if (currentDataSet != null) {
+                IconButton(
+                    modifier = modifier.padding(paddingValues)
+                        .padding(8.dp)
+                        .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
+                    colors = IconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.secondary,
+                        disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        disabledContentColor = MaterialTheme.colorScheme.tertiary
+                    ),
+                    onClick = onRemoveDataSeriesFromDataSet
+                ) {
+                    Icon(Icons.Filled.Remove, "Remove", modifier = Modifier)
+                }
+            } else {
+                IconButton(
+                    modifier = modifier
+                        .padding(8.dp)
+                        .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
+                    colors = IconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.secondary,
+                        disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        disabledContentColor = MaterialTheme.colorScheme.tertiary
+                    ),
+                    onClick = onJoinToDataSet
+                ) {
+                    Icon(Icons.Filled.Merge, "Join", modifier = Modifier)
+                }
             }
         } else {
             IconButton(
@@ -412,30 +436,15 @@ fun DataListWindow(
                     .padding(8.dp)
                     .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
                 colors = IconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.secondary,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.primary,
                     disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     disabledContentColor = MaterialTheme.colorScheme.tertiary
                 ),
-                onClick = onJoinToDataSet
+                onClick = onOpenDataImport
             ) {
-                Icon(Icons.Filled.Merge, "Join", modifier = Modifier)
-            }    
-        }
-    } else {
-        IconButton(
-            modifier = modifier
-                .padding(8.dp)
-                .defaultMinSize(minWidth = 64.dp, minHeight = 64.dp),
-            colors = IconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.primary,
-                disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                disabledContentColor = MaterialTheme.colorScheme.tertiary
-            ),
-            onClick = onOpenDataImport
-        ) {
-            Icon(Icons.Filled.Download, "Import", modifier = Modifier)
+                Icon(Icons.Filled.Download, "Import", modifier = Modifier)
+            }
         }
     }
 }
@@ -489,7 +498,8 @@ fun DataSeriesList(
         LazyColumn(
             modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+            verticalArrangement = Arrangement.Top,
+            userScrollEnabled = true
         ) {
             items(dataSeriesList) { item ->
                 DataSeriesItem(
@@ -524,8 +534,7 @@ fun DataSeriesItem(
         colors = MaterialTheme.customColors.itemSelectedCard
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier,
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (showMarker) {
@@ -537,12 +546,11 @@ fun DataSeriesItem(
 
             Card(
                 modifier = if (!showMarker) modifier
-                    .fillMaxHeight()
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onLongPress = { onCheckedChanged(true) },
                         )
-                    } else modifier.fillMaxHeight(),
+                    } else modifier,
                 colors = MaterialTheme.customColors.itemCard
             ) {
                 Column(
@@ -614,8 +622,8 @@ fun DataSetCreation(
     currentDataSeriesList: List<DataSeries>,
     onSaveChanges: (DataSet) -> Unit,
 ) {
-    var name by remember { mutableStateOf(currentDataSet?.name?:"")}
-    var description by remember { mutableStateOf(currentDataSet?.description?:"")}
+    var name by remember { mutableStateOf(currentDataSet?.name ?: "") }
+    var description by remember { mutableStateOf(currentDataSet?.description ?: "") }
 
     Column(
         modifier = Modifier
@@ -647,7 +655,7 @@ fun DataSetCreation(
         ) {
             DataSeriesList(
                 modifier = Modifier.padding(8.dp),
-                dataSeriesList = (currentDataSet?.columns?.keys?.toList()?: emptyList()) + (currentDataSeriesList),
+                dataSeriesList = (currentDataSet?.columns?.keys?.toList() ?: emptyList()) + (currentDataSeriesList),
                 markedDataSeriesList = emptyList(),
                 onToggleDataSeriesMark = {}
             )
@@ -661,7 +669,9 @@ fun DataSetCreation(
                         id = currentDataSet?.id,
                         name = name,
                         description = description,
-                        columns = (currentDataSet?.columns?: emptyMap()) + currentDataSeriesList.associateBy(keySelector = { it }, valueTransform = { null }),
+                        columns = (currentDataSet?.columns ?: emptyMap()) + currentDataSeriesList.associateBy(
+                            keySelector = { it },
+                            valueTransform = { null }),
                         aiModel = null,
                         autoPredict = false,
                         predictionSeries = currentDataSet?.predictionSeries
@@ -762,7 +772,9 @@ fun DataSetDetails(
                 }
                 dataSet.aiModel?.let {
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -888,7 +900,8 @@ fun RowScope.TableCell(
 ) {
     Text(
         text = text,
-        Modifier.border(1.dp, Color.Black)
+        Modifier
+            .border(1.dp, Color.Black)
             .weight(weight)
             .padding(8.dp)
     )
@@ -991,9 +1004,9 @@ fun DataSetInferenceDefinePredictionConfiguration(
     currentDataSet: DataSet?,
     onSaveConfiguration: (Boolean, DataSeries) -> Unit
 ) {
-    var name by remember { mutableStateOf(currentDataSet?.predictionSeries?.name?:"") }
-    var unit by remember { mutableStateOf(currentDataSet?.predictionSeries?.unit?:"") }
-    var enableAutoPrediction by remember { mutableStateOf(currentDataSet?.autoPredict?:false) }
+    var name by remember { mutableStateOf(currentDataSet?.predictionSeries?.name ?: "") }
+    var unit by remember { mutableStateOf(currentDataSet?.predictionSeries?.unit ?: "") }
+    var enableAutoPrediction by remember { mutableStateOf(currentDataSet?.autoPredict ?: false) }
 
     val isSaveEnabled = name.isNotBlank() && unit.isNotBlank()
 
@@ -1081,24 +1094,26 @@ fun DataSetInferenceConfiguration(
         when (currentStep) {
             INFERENCE_CONFIGURATION_SELECT_MODEL -> DataSetInferenceSelectModel(
                 modifier = modifier,
-                modelList = aiModelList.filter { model -> it.columns.size >= (model.inputs.size-2) }, // 2 less to ignore time tensors
+                modelList = aiModelList.filter { model -> it.columns.size >= (model.inputs.size - 2) }, // 2 less to ignore time tensors
             ) { modelData ->
                 selectedModel = modelData
                 currentStep = INFERENCE_CONFIGURATION_SELECT_FEATURES
             }
+
             INFERENCE_CONFIGURATION_SELECT_FEATURES -> DataSetInferenceSelectFeatures(
                 modifier = modifier,
                 featureList = it.columns.keys.toList().filter { feature -> !selectedFeatureList.containsValue(feature.id) },
                 currentModelTensor = selectedModel.inputs.drop(2)[selectedFeatureList.size] // First 2 time tensors are ignored
             ) { dataSeriesId ->
-                selectedModel.inputs[selectedFeatureList.size+2].id?.let { id ->
+                selectedModel.inputs[selectedFeatureList.size + 2].id?.let { id ->
                     selectedFeatureList = mapOf(Pair(id, dataSeriesId)) + selectedFeatureList
                 }
-                
-                if (selectedFeatureList.size == selectedModel.inputs.size-2) {
+
+                if (selectedFeatureList.size == selectedModel.inputs.size - 2) {
                     currentStep = INFERENCE_CONFIGURATION_FINISH_CONFIG
                 }
             }
+
             INFERENCE_CONFIGURATION_FINISH_CONFIG -> DataSetInferenceDefinePredictionConfiguration(
                 modifier = modifier,
                 currentDataSet = it,
@@ -1205,7 +1220,7 @@ fun Preview() {
             onEditDataSet = {},
             onRemoveDataSeriesFromDataSet = {},
             onOpenInferenceConfiguration = {},
-            onSaveInferenceConfiguration = {_, _ -> },
+            onSaveInferenceConfiguration = { _, _ -> },
             onCreateInferenceSeries = {},
             onCancelInference = {},
             inferenceProgress = 0.0f,

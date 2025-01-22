@@ -56,7 +56,7 @@ class InferenceDataUseCaseImplV2 @Inject constructor(
                                         // Filter times where not all values are present
                                         // Map Datapoints-Lists to FloatArrays
                                         val filteredData = notNullInputData.flatten().groupBy {
-                                            it.time.time
+                                            it.time.time/1000
                                         }.filter {
                                             it.value.size == dataSeriesWithTensor.size
                                         }
@@ -69,8 +69,12 @@ class InferenceDataUseCaseImplV2 @Inject constructor(
                                         // Batching data
                                         for (currentTime in currentDate until endTime step 1000) {
                                             val dataBatch = dataArrays.filter {
-                                                it.key >= currentTime && it.key < currentTime + n_steps*1000
+                                                it.key*1000 >= currentTime && it.key*1000 < currentTime + n_steps*1000
                                             }.values.toTypedArray()
+
+                                            if (dataBatch.size < n_steps) {
+                                                
+                                            }
 
                                             if (dataBatch.size == n_steps) {
 
